@@ -3,16 +3,16 @@
 * C-Project: Build a Shell
 */
 
-#include <studio.h>
+#include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 
 //Allowed includes
 // #include < stdlib>
 // #include < assert.h>
-// #include < ctype.h>
 // #include < errno.h>
 // #include < float.h>
 // #include < limits.h>
@@ -29,58 +29,53 @@
 /*
  * Vorwärtsdeklarationen 
  */
-int exit();
-int date();
-char cd[](char /*insert lineString*/);
-char echo[](char /*insert lineString*/);
-char history[]();
-int ls();
-int time();
+// int exit();
+//void date();
+// char cd[](char directory[]);
+// char echo[](char whatToEcho[]);
+// char history[]();
+// int ls();
+//void historySave();
+
 /*
  * Prints the current date+time.
  */
-int date(){
-    char day[];
-    int day;
-    char month[];
-    int year;
-}
-/**
- * help method for date() and print's current time.
- */
-char time[](){
-    
-    time_t currentTime = time();
-    printf("%s", asctime(localtime(&result)));
-    return currentTime;
-}
-/**
- * Closes the program.
- */
-int exit(){
-    main.active = false; //Stops the loop.
-    return EXIT_SUCCES;
+void date(){
+    time_t currentTime = time(NULL);
+    printf("%s", asctime(localtime(&currentTime)));
 }
 
 /**
  * Changes dir.
  */
-char cd[](char []/*insert lineString*/){
-    switch (){
+void cd(char directory[]){
+    /*Code Here*/
 }
 
 /**
- * Shows the history.
+ * Interacts with the history
  */
-char history[](int lines){
-    char list[];
-    return i;
+void history(char parameters[]){ //Doppelchained List (history[][])
+/*    char list[];
+    if (){ // if parameters = -c then clear
+        
+    }else if (){ //if parameter is a int then print x lines of the history
+        printf();
+    }*/
 }
+
+/*
+ * Saves the last 1000 entrys of history in .hhush.histfile 
+ */
+void historySave(){
+    
+}
+
 
 /**
  * Echos the written String.
  */
-char echo[](char whatToEcho[]){
+void echo(char whatToEcho[]){
     printf("%s", whatToEcho);
     
 }
@@ -88,27 +83,37 @@ char echo[](char whatToEcho[]){
 /**
  * Prints the current directions content.
  */
-char ls[](){
-    printf();
+void ls(char content[]){
+    char directoryContent[sizeof(content)];
+    printf("%s",directoryContent);
 }
 
+/**
+ * Closes the program.
+ */
+/*void exitShell(int *temp){
+    historySave();
+    *temp = 0; //Stops the loop.
+    
+}*/
 
 /*
  *Filters the command
  */
-char commandReader[](char input[]){ //Input is given by main
+char *commandReader(char whatToRead[]){ //Input is given by main
     
-    if (strlen(input)<259) {
+    if (strlen(whatToRead)<259) {
         int k = 0;
         for (int i=0; i<259 ;i++){ //Condition to look out for WS(Whitespaces)
-            if (input[i] != " " || inpur[i] != "\t"){
-                if ( input[i+1] = " " || input[i+1] = "\t"){
-                    
+            if (!isspace(whatToRead[i])){
+                if ( isspace(whatToRead[i+1])){
                     char usable[i+1];       //Create a new String/CharArray to contain the non whitespace parts
                     for (int j=k;j<i+1;j++){ //j=k because of the possible WhiteSpaces at the beginning of the String
-                        usable[j-k] = input[j];
+                        usable[j-k] = whatToRead[j];
                     }
-                    return usable[];
+                    
+                    printf("%s \n \n",usable);
+                    return strtok(usable, "\0");
                 }
             }
             else k++; //Counts the WS before the command
@@ -116,62 +121,61 @@ char commandReader[](char input[]){ //Input is given by main
     }
     else{ 
         printf("Your input is wrong.");//Print default message for unusable input
-        return EXIT_SUCCES;
+         return 0;
         
     }
+    return 0;
 }
 
 /*
  * Filters the content besides the command.
  */
-char contentReader[](char fullInput[], int sizeOfCommand){
-    char content;
-    for (int i = sizeOfCommand-1 ; i < sizeof(fullInput[])+1; i++){
-        content[j] = fullInput[i];
+char *contentReader(char fullInput[], int sizeOfCommand){
+    char content[sizeof(fullInput)- sizeOfCommand];
+    for (int i = sizeOfCommand-1 ; i < sizeof(fullInput)+1; i++){
+        content[i] = fullInput[i];
     }
-    return content[];
+    return strtok(content, "\n");
 }
 
 /*
  * Main method to run the shell.
  */
 int main(){
-    for (_Bool active=true; active==true;){ //loop to run the projec
-        println(/*directory*/  + " $ ",%s);   //Print current directory
+//     int timecount = 0;
+//     for (int isActive = 1; isActive == 1 ; timecount++){ //loop to run the project
+    while(1){
+        printf(/*directory  +*/ " $ "/*,%s*/);   //Print current directory
         char input[258];
         fgets(input, 258, stdin);
         
-        {Insert code}//add new line to history
+        /*{Insert code}add new line to history*/
         
-        char input[258];
-        fgets(input, 258, stdin);
-        char command[] = commandReader(input[]); //read out the command.
-        char content[] = contentReader(input[], sizeof(command)); //read out the rest
-        
-        do{
-            if (command[] == exit){
-                exit();
-            }
-            else if (command[] == date){ 
-                date();
-            }
-            else if (command[] == cd){ 
-                cd(content[]);
-            }
-            else if (command[] == echo){
-                echo(content[]);
-            }
-            else if (command[] == history){
-                history(content[]);
-            }
-            else if (command[] == ls){
-                ls();
-            }
-            
+        char *command = commandReader(input); //read out the command.
+        char *content = contentReader(input , sizeof(command)); //read out the rest
+        if (!strcmp(command,"exit")){
+            //exitShell(&isActive);
+            historySave();
+            break;
         }
-
+        else if (!strcmp(command,"date")){ 
+            date();
+        }
+        else if (!strcmp(command,"cd")){ 
+            cd(content);
+        }
+        else if (!strcmp(command,"echo")){
+            echo(input);
+        }
+        else if (!strcmp(command,"history")){
+            history(content);
+        }
+        else if (!strcmp(command,"ls")){
+            ls(content);
+        }
+//         printf("%s : %s",input, content);
     }
-return EXIT_SUCCES;
+return 0;
 }
 
 //Bspl: fgets([var], [length], stdin);
