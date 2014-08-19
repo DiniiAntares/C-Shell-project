@@ -46,13 +46,6 @@ void date(){
 }
 
 /**
- * Changes dir.
- */
-void cd(char directory[]){
-    /*Code Here*/
-}
-
-/**
  * Interacts with the history
  */
 void history(char parameters[]){ //Doppelchained List (history[][])
@@ -71,31 +64,23 @@ void historySave(){
     
 }
 
-
 /**
- * Echos the written String.
+ * Changes dir.
  */
-void echo(char whatToEcho[]){
-    printf("%s", whatToEcho);
-    
+void cd(char directory[]){
+    /*Code Here*/
+    chdir(directory);
+    //printf("%s",directory);
 }
 
 /**
  * Prints the current directions content.
  */
-void ls(char content[]){
-    char directoryContent[sizeof(content)];
-    printf("%s",directoryContent);
+void ls(/*char content[]*/){
+//     char *directoryContent;
+//     directoryContent = 
+//     printf("%s",directoryContent);
 }
-
-/**
- * Closes the program.
- */
-/*void exitShell(int *temp){
-    historySave();
-    *temp = 0; //Stops the loop.
-    
-}*/
 
 /*
  *Filters the command
@@ -110,9 +95,8 @@ char *commandReader(char whatToRead[]){ //Input is given by main
                     char usable[i+1];       //Create a new String/CharArray to contain the non whitespace parts
                     for (int j=k;j<i+1;j++){ //j=k because of the possible WhiteSpaces at the beginning of the String
                         usable[j-k] = whatToRead[j];
+                        usable[j-k+1] = '\0';
                     }
-                    
-                    printf("%s \n \n",usable);
                     return strtok(usable, "\0");
                 }
             }
@@ -126,35 +110,38 @@ char *commandReader(char whatToRead[]){ //Input is given by main
     }
     return 0;
 }
-
 /*
  * Filters the content besides the command.
  */
 char *contentReader(char fullInput[], int sizeOfCommand){
-    char content[sizeof(fullInput)- sizeOfCommand];
-    for (int i = sizeOfCommand-1 ; i < sizeof(fullInput)+1; i++){
-        content[i] = fullInput[i];
+    char content[sizeof(fullInput)-sizeOfCommand];
+    int k=0;
+    for (int i = sizeOfCommand+2; i < sizeof(fullInput); i++){
+        content[k] = fullInput[i];
+        content[k+1] = '\0';
+        k++;
     }
-    return strtok(content, "\n");
+    return strtok(content, "\0");
 }
 
 /*
  * Main method to run the shell.
  */
 int main(){
-//     int timecount = 0;
-//     for (int isActive = 1; isActive == 1 ; timecount++){ //loop to run the project
+    int commandSize;
     while(1){
-        printf(/*directory  +*/ " $ "/*,%s*/);   //Print current directory
+        
+        char *get_current_dir_name();
+        printf("%s $ " ,get_current_dir_name());   //Print current directory
         char input[258];
         fgets(input, 258, stdin);
         
         /*{Insert code}add new line to history*/
-        
         char *command = commandReader(input); //read out the command.
-        char *content = contentReader(input , sizeof(command)); //read out the rest
+        commandReader(input);
+        commandSize = sizeof(command);
+        
         if (!strcmp(command,"exit")){
-            //exitShell(&isActive);
             historySave();
             break;
         }
@@ -162,18 +149,25 @@ int main(){
             date();
         }
         else if (!strcmp(command,"cd")){ 
+            char *content = contentReader(input , commandSize); //read out the rest
+            contentReader(input, commandSize);
             cd(content);
         }
-        else if (!strcmp(command,"echo")){
-            echo(input);
+        else if (!strcmp(command,"echo")){ //Echos the written String
+                char *content = contentReader(input , commandSize); //read out the rest
+                contentReader(input, commandSize);
+                printf("%s", content);
         }
         else if (!strcmp(command,"history")){
-            history(content);
+                char *content = contentReader(input , commandSize); //read out the rest
+                contentReader(input, commandSize);
+                history(content);
         }
         else if (!strcmp(command,"ls")){
-            ls(content);
+//             char *content = contentReader(input , commandSize); //read out the rest
+//             contentReader(input, commandSize);
+                ls();
         }
-//         printf("%s : %s",input, content);
     }
 return 0;
 }
