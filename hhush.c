@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <dirent.h>
 
 //Allowed includes
 // #include < stdlib>
@@ -41,8 +42,8 @@
  * Prints the current date+time.
  */
 void date(){
-    time_t currentTime = time(NULL);
-    printf("%s", asctime(localtime(&currentTime)));
+    time_t currentTime = time(NULL);    //create a var out of time_t
+    printf("%s", asctime(localtime(&currentTime))); //Arange and print Time
 }
 
 /**
@@ -69,6 +70,8 @@ void historySave(){
  */
 void cd(char directory[]){
     /*Code Here*/
+//     if == ".."
+// for (int i = strlen(directory); directory[i-1] == / ;i--)
     chdir(directory);
     //printf("%s",directory);
 }
@@ -77,9 +80,15 @@ void cd(char directory[]){
  * Prints the current directions content.
  */
 void ls(/*char content[]*/){
-//     char *directoryContent;
-//     directoryContent = 
-//     printf("%s",directoryContent);
+    DIR *directory;
+    struct dirent *dirStruct;           //Creates a Struct
+    directory = opendir(".");  //Open Directory
+    if (directory != NULL){
+        while((dirStruct = readdir(directory)) != NULL){ //loop the output
+            printf("%s\n", dirStruct->d_name); //Read out Directory trough the Struct
+        }
+    }
+    closedir(directory); //Close Directory
 }
 
 /*
@@ -114,9 +123,9 @@ char *commandReader(char whatToRead[]){ //Input is given by main
  * Filters the content besides the command.
  */
 char *contentReader(char fullInput[], int sizeOfCommand){
-    char content[sizeof(fullInput)-sizeOfCommand];
+    char content[strlen(fullInput)-sizeOfCommand];
     int k=0;
-    for (int i = sizeOfCommand+2; i < sizeof(fullInput); i++){
+    for (int i = sizeOfCommand+1; i < strlen(fullInput); i++){
         content[k] = fullInput[i];
         content[k+1] = '\0';
         k++;
@@ -134,41 +143,47 @@ int main(){
         char *get_current_dir_name();
         printf("%s $ " ,get_current_dir_name());   //Print current directory
         char input[258];
-        fgets(input, 258, stdin);
+        fgets(input, sizeof(input), stdin);
+        printf("ICH LEBE");
+
+        if (input[0]!='\0'){
         
         /*{Insert code}add new line to history*/
+
         char *command = commandReader(input); //read out the command.
         commandReader(input);
-        commandSize = sizeof(command);
+        commandSize = strlen(command);
         
         if (!strcmp(command,"exit")){
             historySave();
             break;
         }
         else if (!strcmp(command,"date")){ 
-            date();
+            char *content = contentReader(input , commandSize); //read out the rest
+            if (strlen(content)>0){
+                printf("invalid arguments\n");
+            }
+            else{
+               date();
+            }
         }
         else if (!strcmp(command,"cd")){ 
             char *content = contentReader(input , commandSize); //read out the rest
-            contentReader(input, commandSize);
             cd(content);
         }
         else if (!strcmp(command,"echo")){ //Echos the written String
                 char *content = contentReader(input , commandSize); //read out the rest
-                contentReader(input, commandSize);
                 printf("%s", content);
         }
         else if (!strcmp(command,"history")){
                 char *content = contentReader(input , commandSize); //read out the rest
-                contentReader(input, commandSize);
                 history(content);
         }
         else if (!strcmp(command,"ls")){
 //             char *content = contentReader(input , commandSize); //read out the rest
-//             contentReader(input, commandSize);
                 ls();
         }
-    }
+    }}
 return 0;
 }
 
