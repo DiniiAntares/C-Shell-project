@@ -45,10 +45,13 @@ void date(){
 /**
  * Interacts with the history
  */
-void historyFunc(char *parameters, char *historyContent, int histLength){ //Doppelchained List (history[][])
+void historyFunc(char *parameters, char *historyContent, int histLength){ 
     
-    if (historyContent != NULL){
-        for (int i=0;i<histLength;i++){
+    if ( !strcmp(parameters, "-c")){
+        printf("invalid arguments\n");
+    }
+    else if (historyContent != NULL){
+        for (int i=0;i<histLength;i++){ //print doublechained List
         printf("%s",&(historyContent[i*258]));
         }
     }
@@ -60,17 +63,13 @@ void historyFunc(char *parameters, char *historyContent, int histLength){ //Dopp
  */
 void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
     FILE *historyFile;
-    historyFile = fopen(".hhush.histfile","rw+");
-    if (historyFile != NULL){
-
+    if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){
         while(fputs(historyCurrent, historyFile));
-        for (int i=0;i<collumCount;i++){
+        for (int i=0; i < collumCount; i++ ){
             fputs(&(historyCurrent[i*258]), historyFile);
         }
-        
         fclose(historyFile);
     }
-    
 }
 
 /**
@@ -78,7 +77,7 @@ void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
  */
 void cd(char *directory){
     if (chdir(directory)==-1){
-        printf("You shall not Pass!\n");
+        printf("No such directory\n");
     }
     //printf("%s",directory);
 }
@@ -86,16 +85,33 @@ void cd(char *directory){
 /**
  * Prints the current directions content.
  */
-void ls(/*char content[]*/){
-    DIR *directory;
-    struct dirent *dirStruct;           //Creates a Struct
-    directory = opendir(".");  //Open Directory
-    if (directory != NULL){
-        while((dirStruct = readdir(directory)) != NULL){ //loop the output
-            printf("%s\n", dirStruct->d_name); //Read out Directory trough the Struct
+void ls(char *content){
+    if(content==NULL){
+        DIR *directory;
+        struct dirent *dirStruct;           //Creates a Struct
+        directory = opendir(".");  //Open Directory
+        if (directory != NULL){
+            while((dirStruct = readdir(directory)) != NULL){ //loop the output
+                printf("%s\n", dirStruct->d_name); //Read out Directory trough the Struct
+            }
         }
+        closedir(directory); //Close Directory{
     }
-    closedir(directory); //Close Directory
+    else {
+        printf("invalid arguments\n");
+    }
+}
+
+/*
+ * What does GREP????
+ */
+char *grep(char *parameters){
+                                        //BAUSTELLE!!!
+    //Read out the files searched for with parameters.
+    char *grepOutput = 0;
+    
+    printf("%s",grepOutput);
+    
 }
 
 /*
@@ -145,44 +161,45 @@ char *contentReader(char fullInput[], int sizeOfCommand){
  */
 int main(){
     int commandSize=0;
-    
+    char *get_current_dir_name();
+    char *startDir = get_current_dir_name(); // To prevent false dir for history File
+    char *command=0;
+    char *content = 0;
     FILE *historyFile;
-    historyFile = fopen(".hhush.histfile","rw+");
     char *history;
     int historyCollumCount=0;
     history=malloc(258*sizeof(char));
-    if (historyFile != NULL){
+    
+    if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
         for(historyCollumCount=0; fgets(&(history[historyCollumCount * 258]), 258, historyFile) ; ){//Read out .hhush.histfile and put it in the history
-            historyCollumCount++;
             history=realloc(history,(1+historyCollumCount) * 258 * sizeof(char)); //malloc enouth to put the fileContent in the historyList
+            historyCollumCount++;
         }
     fclose(historyFile);
     }
 
     while(1){
-        
-        char *get_current_dir_name();
         printf("%s $ " ,get_current_dir_name());   //Print current directory
         char input[258];
         fgets(input, 256, stdin);
 
         if (input[0]!='\n'){
-            history=realloc(history, (2+historyCollumCount) * 258 * sizeof(char)); //add new line to history
-            strcpy(&(history[historyCollumCount * 258]), input);
             historyCollumCount++;
-
-
-            char *command = commandReader(input); //read out the command.
+            history=realloc(history, (1+historyCollumCount) * 258 * sizeof(char)); //add new line to history
+            strcpy(&(history[historyCollumCount * 258]), input);
+            
+            command = commandReader(input); //read out the command.
             commandReader(input);
             commandSize = strlen(command);
             
             if (!strcmp(command,"exit")){
+                cd(startDir);
                 historySave(history, historyCollumCount);
                 break;
             }
             else if (!strcmp(command,"date")){ 
-                char *content = contentReader(input , commandSize); //read out the rest
-                if (strlen(content)>0){
+                content = contentReader(input , commandSize); //read out the rest
+                if (content!=NULL){
                     printf("invalid arguments\n");
                 }
                 else{
@@ -190,20 +207,23 @@ int main(){
                 }
             }
             else if (!strcmp(command,"cd")){ 
-                char *content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize); //read out the rest
                 cd(content);
             }
             else if (!strcmp(command,"echo")){ //Echos the written String
-                    char *content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize); //read out the rest
+                if (content!=NULL){
                     printf("%s\n", content);
+                    
+                }
             }
             else if (!strcmp(command,"history")){
-                    char *content = contentReader(input , commandSize); //read out the rest
-                    historyFunc(content, history, historyCollumCount);
+                content = contentReader(input , commandSize); //read out the rest
+                historyFunc(content, history, historyCollumCount);
             }
             else if (!strcmp(command,"ls")){
-    //             char *content = contentReader(input , commandSize); //read out the rest
-                    ls();
+                content = contentReader(input , commandSize); //read out the rest
+                ls(content);
             }
         }
     }
