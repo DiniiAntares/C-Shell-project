@@ -48,10 +48,10 @@ void date(){
 void historyFunc(char *parameters, char *historyContent, int histLength){ 
     
     if ( !strcmp(parameters, "-c")){
-        printf("invalid arguments\n");
+        printf("invalid arguments\n");          //TODO add parameters to delete the history and print specific lines
     }
     else if (historyContent != NULL){
-        for (int i=0;i<histLength;i++){ //print doublechained List
+        for (int i=0;i<histLength;i++){ //print double-linked list
         printf("%s",&(historyContent[i*258]));
         }
     }
@@ -62,9 +62,8 @@ void historyFunc(char *parameters, char *historyContent, int histLength){
  * Saves the last 1000 entrys of history in .hhush.histfile 
  */
 void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
-    FILE *historyFile;
+    FILE *historyFile=0;
     if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){
-        while(fputs(historyCurrent, historyFile));
         for (int i=0; i < collumCount; i++ ){
             fputs(&(historyCurrent[i*258]), historyFile);
         }
@@ -103,14 +102,44 @@ void ls(char *content){
 }
 
 /*
- * What does GREP????
+ * Read out content from file and search a pattern
  */
 char *grep(char *parameters){
-                                        //BAUSTELLE!!!
-    //Read out the files searched for with parameters.
-    char *grepOutput = 0;
-    
-    printf("%s",grepOutput);
+    char *grepOutput = 0;    //TODO : add malloc !!
+    char *pattern= 0;
+    char *filename = 0;
+    char *grepFileContent = 0 ;
+    FILE *grepFilePointer;
+    if(parameters != 0){    //Read out the searched pattern and file name;
+        int k=0;
+        for (int i = 0; !isspace(parameters[i+1]);i++){ //Read out the searched pattern...
+            pattern[i] = parameters[i];
+            pattern[i+1]='\0';
+        }
+        for (int i = strlen(pattern); !isspace(parameters[i+1]);i++ ){ //  ...and file name.
+            filename[k] = parameters[i];
+            filename[k+1]='\0';
+            k++;
+        }
+        if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
+            //int grepBuffer = 0;
+//             grepOutput = malloc();
+            for (int i = 0 ;(fgets(&(grepFileContent[i*258]),258 , grepFilePointer)); ){ //get content of file
+//                 grepOutput = realloc();
+                grepOutput = strstr(grepFileContent, pattern); //Put every appearence of pattern to output
+                printf("%s\n",grepOutput);
+            }
+            
+            printf("%s",grepOutput);
+        }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
+            printf("no such file!\n");
+        }
+        return "Exit Success!";
+    }
+    else {
+        printf("invalid parameters\n");
+        return "Exit but you go a problem dude!";
+    }
     
 }
 
@@ -165,15 +194,16 @@ int main(){
     char *startDir = get_current_dir_name(); // To prevent false dir for history File
     char *command=0;
     char *content = 0;
-    FILE *historyFile;
-    char *history;
+    FILE *historyFile = 0;
+    char *history = 0;
     int historyCollumCount=0;
     history=malloc(258*sizeof(char));
     
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
         for(historyCollumCount=0; fgets(&(history[historyCollumCount * 258]), 258, historyFile) ; ){//Read out .hhush.histfile and put it in the history
-            history=realloc(history,(1+historyCollumCount) * 258 * sizeof(char)); //malloc enouth to put the fileContent in the historyList
             historyCollumCount++;
+            history=realloc(history,(1+historyCollumCount) * 258 * sizeof(char)); //malloc enouth to put the fileContent in the historyList
+            
         }
     fclose(historyFile);
     }
@@ -184,8 +214,8 @@ int main(){
         fgets(input, 256, stdin);
 
         if (input[0]!='\n'){
+            history=realloc(history, (2+historyCollumCount) * 258 * sizeof(char)); //add new line to history
             historyCollumCount++;
-            history=realloc(history, (1+historyCollumCount) * 258 * sizeof(char)); //add new line to history
             strcpy(&(history[historyCollumCount * 258]), input);
             
             command = commandReader(input); //read out the command.
@@ -224,6 +254,13 @@ int main(){
             else if (!strcmp(command,"ls")){
                 content = contentReader(input , commandSize); //read out the rest
                 ls(content);
+            }
+            else if (!strcmp(command,"grep")){
+                content = contentReader(input , commandSize); //read out the rest
+                grep(content);
+            }
+            else{
+                printf("comand not found\n");
             }
         }
     }
