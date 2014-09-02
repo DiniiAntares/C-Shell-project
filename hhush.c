@@ -48,7 +48,7 @@ void date(){
 void historyFunc(char *parameters, char *historyContent, int histLength){ 
     
     if ( !strcmp(parameters, "-c")){
-        printf("invalid arguments\n");          //TODO add parameters to delete the history and print specific lines
+        printf("invalid arguments\n"); //TODO add parameters to delete the history and print specific lines
     }
     else if (historyContent != NULL){
         for (int i=0;i<histLength;i++){ //print double-linked list
@@ -109,7 +109,9 @@ char *grep(char *parameters){
     char *pattern= 0;
     char *filename = 0;
     char *grepFileContent = 0 ;
-    FILE *grepFilePointer;
+    FILE *grepFilePointer = 0;
+    int enouth=0;
+    
     if(parameters != 0){    //Read out the searched pattern and file name;
         int k=0;
         for (int i = 0; !isspace(parameters[i+1]);i++){ //Read out the searched pattern...
@@ -123,14 +125,23 @@ char *grep(char *parameters){
         }
         if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
             //int grepBuffer = 0;
-//             grepOutput = malloc();
-            for (int i = 0 ;(fgets(&(grepFileContent[i*258]),258 , grepFilePointer)); ){ //get content of file
-//                 grepOutput = realloc();
-                grepOutput = strstr(grepFileContent, pattern); //Put every appearence of pattern to output
-                printf("%s\n",grepOutput);
-            }
             
+            grepOutput = malloc(258 * sizeof(char));
+            for (int i = 0 ;(fgets(&(grepFileContent[i*258]),258 , grepFilePointer)); ){ //get content of file
+                if(strstr(grepFileContent, pattern)!= NULL) { //Put every appearence of pattern to output
+                    for(int p=0; grepFileContent[i*258+p] != '\n' ;p++){
+                        if (grepFileContent[i*258+p+1] == '\n'){
+                            enouth = 1;
+                        }
+                    }
+                    if (enouth != 1){
+                        grepOutput = realloc(grepOutput, (i * 258 + k) * sizeof(char));
+                    }
+                }
+                // printf("%s\n",grepOutput);
+            }
             printf("%s",grepOutput);
+            free(grepOutput);
         }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
             printf("no such file!\n");
         }
@@ -238,13 +249,16 @@ int main(){
             }
             else if (!strcmp(command,"cd")){ 
                 content = contentReader(input , commandSize); //read out the rest
-                cd(content);
+                if (content!=NULL){
+                    cd(content);
+                }else{
+                    printf("there is no such path");
+                }
             }
             else if (!strcmp(command,"echo")){ //Echos the written String
                 content = contentReader(input , commandSize); //read out the rest
                 if (content!=NULL){
                     printf("%s\n", content);
-                    
                 }
             }
             else if (!strcmp(command,"history")){
