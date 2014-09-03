@@ -106,26 +106,24 @@ void ls(char *content){
  */
 char *grep(char *parameters){
     char *grepOutput = 0;    //TODO : add malloc !!
-    char *pattern= 0;
-    char *filename = 0;
+    char pattern[258];
+    char filename[258];
     char *grepFileContent = 0 ;
     FILE *grepFilePointer = 0;
     int enouth=0;
     
     if(parameters != 0){    //Read out the searched pattern and file name;
         int k=0;
-        for (int i = 0; !isspace(parameters[i+1]);i++){ //Read out the searched pattern...
+        for (int i = 0; !isspace(parameters[i]);i++){ //Read out the searched pattern...
             pattern[i] = parameters[i];
             pattern[i+1]='\0';
         }
-        for (int i = strlen(pattern); !isspace(parameters[i+1]);i++ ){ //  ...and file name.
+        for (int i = strlen(pattern)+1; !isspace(parameters[i+1]);i++ ){ //  ...and file name.
             filename[k] = parameters[i];
             filename[k+1]='\0';
             k++;
         }
-        if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
-            //int grepBuffer = 0;
-            
+/*FEHLER IN DER ZEILE, FILE WIRD NICHT GEÖFFNET*/        if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
             grepOutput = malloc(258 * sizeof(char));
             for (int i = 0 ;(fgets(&(grepFileContent[i*258]),258 , grepFilePointer)); ){ //get content of file
                 if(strstr(grepFileContent, pattern)!= NULL) { //Put every appearence of pattern to output
@@ -141,6 +139,7 @@ char *grep(char *parameters){
                 // printf("%s\n",grepOutput);
             }
             printf("%s",grepOutput);
+            fclose(grepFilePointer);
             free(grepOutput);
         }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
             printf("no such file!\n");
@@ -188,12 +187,17 @@ char *commandReader(char whatToRead[]){ //Input is given by main
 char *contentReader(char fullInput[], int sizeOfCommand){
     char content[strlen(fullInput)-sizeOfCommand];
     int k=0;
-    for (int i = sizeOfCommand+1; i < strlen(fullInput)-1; i++){
-        content[k] = fullInput[i];
-        content[k+1] = '\0';
-        k++;
+    if (fullInput != NULL && fullInput[sizeOfCommand+1] != '\0'){
+            for (int i = sizeOfCommand+1; i < strlen(fullInput)-1; i++){
+            content[k] = fullInput[i];
+            content[k+1] = '\0';
+            k++;
+            }
+            return strtok(content,"\0");
+    }else{
+        content[0] = '\0';
+        return strtok(content,"\0");
     }
-    return strtok(content, "\0");
 }
 
 /*
@@ -234,9 +238,15 @@ int main(){
             commandSize = strlen(command);
             
             if (!strcmp(command,"exit")){
-                cd(startDir);
-                historySave(history, historyCollumCount);
-                break;
+                content = contentReader(input , commandSize); //read out the rest
+                if (content!=NULL){       
+                    printf("invalid arguments\n");
+                }
+                else{
+                    cd(startDir);
+                    historySave(history, historyCollumCount);
+                    break;
+                }
             }
             else if (!strcmp(command,"date")){ 
                 content = contentReader(input , commandSize); //read out the rest
@@ -271,7 +281,9 @@ int main(){
             }
             else if (!strcmp(command,"grep")){
                 content = contentReader(input , commandSize); //read out the rest
-                grep(content);
+                if(content!=NULL){
+                    grep(content);
+                }
             }
             else{
                 printf("comand not found\n");
