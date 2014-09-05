@@ -158,19 +158,19 @@ char *grep(char *parameters){
 /*
  *Filters the command
  */
-char *commandReader(char whatToRead[]){ //Input is given by main
+char commandReader(char whatToRead[], char command[256]){ //Input is given by main
     
     if (strlen(whatToRead)<257) {
         int k = 0;
         for (int i=0; i<257 ;i++){ //Condition to look out for WS(Whitespaces)
             if (!isspace(whatToRead[i])){
                 if ( isspace(whatToRead[i+1])){
-                    char usable[i+1];       //Create a new String/CharArray to contain the non whitespace parts
+                    //char usable[i+1];       //Create a new String/CharArray to contain the non whitespace parts
                     for (int j=k;j<i+1;j++){ //j=k because of the possible WhiteSpaces at the beginning of the String
-                        usable[j-k] = whatToRead[j];
-                        usable[j-k+1] = '\0';
+                        command[j-k] = whatToRead[j];
+                        command[j-k+1] = '\0';
                     }
-                    return strtok(usable, "\0");
+                    //return strtok(usable, "\0");
                 }
             }
             else k++; //Counts the WS before the command
@@ -178,16 +178,16 @@ char *commandReader(char whatToRead[]){ //Input is given by main
     }
     else{ 
         printf("Your input is wrong.");//Print default message for unusable input
-        char unusable[21] = "Your input is wrong.";
-        return strtok(unusable, "\0");
+        //char unusable[21] = "Your input is wrong.";
+        //return strtok(unusable, "\0");
     }
-    return "Impossible!";
+    //return "Impossible!";
 }
 /*
  * Filters the content besides the command.
  */
-char *contentReader(char fullInput[], int sizeOfCommand){
-    char content[strlen(fullInput)-sizeOfCommand];
+void contentReader(char fullInput[], int sizeOfCommand, char content[256]){
+    
     int k=0;
     if (fullInput != NULL && fullInput[sizeOfCommand+1] != '\0'){
             for (int i = sizeOfCommand+1; i < strlen(fullInput)-1; i++){
@@ -195,10 +195,10 @@ char *contentReader(char fullInput[], int sizeOfCommand){
             content[k+1] = '\0';
             k++;
             }
-            return strtok(content,"\0");
+            //return strtok(content,"\0");
     }else{
         content[0] = '\0';
-        return strtok(content,"\0");
+        //return strtok(content,"\0");
     }
 }
 
@@ -209,8 +209,8 @@ int main(){
     int commandSize = 0;
     char *get_current_dir_name();
     char *startDir = get_current_dir_name(); // To prevent false dir for history File
-    char *command = malloc(256*sizeof(char));
-    char *content = malloc(256*sizeof(char));
+    char command[256];
+    char content[256];
     FILE *historyFile = NULL;
     char *history = NULL;
     int historyCollumCount = 0;
@@ -235,12 +235,12 @@ int main(){
             historyCollumCount++;
             strcpy(&(history[historyCollumCount * 256]), input);
             
-            command = commandReader(input); //read out the command.
+            command = commandReader(input, command); //read out the command.
 //          commandReader(input);
             commandSize = strlen(command);
             
             if (!strncmp(command,"exit", 4)){
-                content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize, content); //read out the rest
                 if (content!=NULL){       
                     printf("invalid arguments\n");
                 }
@@ -251,7 +251,7 @@ int main(){
                 }
             }
             else if (!strncmp(command,"date",4)){ 
-                content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize, content); //read out the rest
                 if (content!=NULL){
                     printf("invalid arguments\n");
                 }
@@ -260,7 +260,7 @@ int main(){
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
-                content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize, content); //read out the rest
                 if (content!=NULL){
                     cd(content);
                 }else{
@@ -268,21 +268,21 @@ int main(){
                 }
             }
             else if (!strncmp(command,"echo",4)){ //Echos the written String
-                content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize, content); //read out the rest
                 if (content!=NULL){
                     printf("%s\n", content);
                 }
             }
             else if (!strncmp(command,"history",7)){
-                content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize, content); //read out the rest
                 historyFunc(content, history, historyCollumCount);
             }
             else if (!strncmp(command,"ls",2)){
-                content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize, content); //read out the rest
                 ls(content);
             }
             else if (!strncmp(command,"grep",4)){
-                content = contentReader(input , commandSize); //read out the rest
+                content = contentReader(input , commandSize, content); //read out the rest
                 if(content!=NULL){
                     grep(content);
                 }
