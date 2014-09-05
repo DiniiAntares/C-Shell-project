@@ -24,7 +24,7 @@
 // #include <stddef.h>
 
 /*
- * Vorwärtsdeklarationen 
+ * Vorwärtsdeklarationen, unnötig da funktionen vor Main sind
  */
 // int exit();
 //void date();
@@ -48,13 +48,13 @@ void date(){
 void historyFunc(char *parameters, char *historyContent, int histLength){ 
     
     if ( parameters == NULL && historyContent != NULL){
-            for (int i=0;i<histLength;i++){ //print double-linked list
-            printf("%s",&(historyContent[i*258]));
+            for (int i=0;i<histLength+1;i++){ //print double-linked list
+            printf("%s",&(historyContent[i*256]));
             }
         }
     else if ( !strcmp(parameters, "-c")){
-        for(int i=0 ;i<histLength*258;i++){
-            historyContent[i] = '\0'; //TODO add parameters to delete the history and print specific line
+        for(int i=0 ;i<histLength*257;i++){
+            historyContent[i] = '\0'; //TODO why does it only delte sometimes?
         }
     }
 }
@@ -66,7 +66,7 @@ void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
     FILE *historyFile=0;
     if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){
         for (int i=0; i < collumCount; i++ ){
-            fputs(&(historyCurrent[i*258]), historyFile);
+            fputs(&(historyCurrent[i*256]), historyFile);
         }
         fclose(historyFile);
     }
@@ -106,10 +106,10 @@ void ls(char *content){
  * Read out content from file and search a pattern
  */
 char *grep(char *parameters){
-    char pattern[258];
-    char filename[258];
-    char *grepOutput = malloc(258 * sizeof(char)); //Malloc something to prevent NULLPOINTER
-    char *grepFileContent = malloc(258 * sizeof(char)); //Malloc something to prevent NULLPOINTER
+    char pattern[256];
+    char filename[256];
+    char *grepOutput = malloc(256 * sizeof(char)); //Malloc something to prevent NULLPOINTER
+    char *grepFileContent = malloc(256 * sizeof(char)); //Malloc something to prevent NULLPOINTER
     FILE *grepFilePointer = 0;
     int enouth=0;
     
@@ -127,15 +127,15 @@ char *grep(char *parameters){
         printf("%s", filename);
         grepFilePointer = fopen(filename,"r");
 /*FEHLER IN DER ZEILE, FILE WIRD NICHT GEÖFFNET*/ if(grepFilePointer != NULL){ //try to open the file to read out rhe content
-            for (int i = 0 ;(fgets(&(grepFileContent[i*258]),258 , grepFilePointer)); ){ //get content of file
+            for (int i = 0 ;(fgets(&(grepFileContent[i*256]),256 , grepFilePointer)); ){ //get content of file
                 if(strstr(grepFileContent, pattern)!= NULL) { //Put every appearence of pattern to output
-                    for(int p=0; grepFileContent[i*258+p] != '\n' ;p++){
-                        if (grepFileContent[i*258+p+1] == '\n'){
+                    for(int p=0; grepFileContent[i*256+p] != '\n' ;p++){
+                        if (grepFileContent[i*256+p+1] == '\n'){
                             enouth = 1;
                         }
                     }
                     if (enouth != 1){ //Check size of grepOutput
-                        grepOutput = realloc(grepOutput, (i * 258 + k) * sizeof(char)); //extend if to small
+                        grepOutput = realloc(grepOutput, (i * 256 + k) * sizeof(char)); //extend if to small
                     }
                 }
                 // printf("%s\n",grepOutput);
@@ -160,9 +160,9 @@ char *grep(char *parameters){
  */
 char *commandReader(char whatToRead[]){ //Input is given by main
     
-    if (strlen(whatToRead)<259) {
+    if (strlen(whatToRead)<257) {
         int k = 0;
-        for (int i=0; i<259 ;i++){ //Condition to look out for WS(Whitespaces)
+        for (int i=0; i<257 ;i++){ //Condition to look out for WS(Whitespaces)
             if (!isspace(whatToRead[i])){
                 if ( isspace(whatToRead[i+1])){
                     char usable[i+1];       //Create a new String/CharArray to contain the non whitespace parts
@@ -206,20 +206,20 @@ char *contentReader(char fullInput[], int sizeOfCommand){
  * Main method to run the shell.
  */
 int main(){
-    int commandSize=0;
+    int commandSize = 0;
     char *get_current_dir_name();
     char *startDir = get_current_dir_name(); // To prevent false dir for history File
-    char *command=0;
-    char *content = 0;
-    FILE *historyFile = 0;
-    char *history = 0;
-    int historyCollumCount=0;
-    history=malloc(258*sizeof(char));
-    char input[258];
+    char *command = malloc(256*sizeof(char));
+    char *content = malloc(256*sizeof(char));
+    FILE *historyFile = NULL;
+    char *history = NULL;
+    int historyCollumCount = 0;
+    history=malloc(256*sizeof(char));
+    char *input=malloc(258*sizeof(char));
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
-        for(historyCollumCount=0; fgets(&(history[historyCollumCount * 258]), 258, historyFile) ; ){//Read out .hhush.histfile and put it in the history
+        for(historyCollumCount=0; fgets(&(history[historyCollumCount * 256]), 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
             historyCollumCount++;
-            history=realloc(history,(1+historyCollumCount) * 258 * sizeof(char)); //malloc enouth to put the fileContent in the historyList
+            history=realloc(history,(1+historyCollumCount) * 256 * sizeof(char)); //malloc enouth to put the fileContent in the historyList
             
         }
     fclose(historyFile);
@@ -228,18 +228,18 @@ int main(){
     while(1){
         printf("%s $ " ,get_current_dir_name());   //Print current directory
         
-        fgets(input, 258, stdin); //Why does it always missread the first input?
+        fgets(input, 256, stdin); //Why does it always missread the first input?
 
         if (input[0]!='\n'){
-            history=realloc(history, (2+historyCollumCount) * 258 * sizeof(char)); //add new line to history
+            history=realloc(history, (2+historyCollumCount) * 256 * sizeof(char)); //add new line to history
             historyCollumCount++;
-            strcpy(&(history[historyCollumCount * 258]), input);
+            strcpy(&(history[historyCollumCount * 256]), input);
             
             command = commandReader(input); //read out the command.
-            commandReader(input);
+//          commandReader(input);
             commandSize = strlen(command);
             
-            if (!strcmp(command,"exit")){
+            if (!strncmp(command,"exit", 4)){
                 content = contentReader(input , commandSize); //read out the rest
                 if (content!=NULL){       
                     printf("invalid arguments\n");
@@ -250,7 +250,7 @@ int main(){
                     break;
                 }
             }
-            else if (!strcmp(command,"date")){ 
+            else if (!strncmp(command,"date",4)){ 
                 content = contentReader(input , commandSize); //read out the rest
                 if (content!=NULL){
                     printf("invalid arguments\n");
@@ -259,29 +259,29 @@ int main(){
                 date();
                 }
             }
-            else if (!strcmp(command,"cd")){ 
+            else if (!strncmp(command,"cd",2)){ 
                 content = contentReader(input , commandSize); //read out the rest
                 if (content!=NULL){
                     cd(content);
                 }else{
-                    printf("there is no such path");
+                    printf("there is no such path\n");
                 }
             }
-            else if (!strcmp(command,"echo")){ //Echos the written String
+            else if (!strncmp(command,"echo",4)){ //Echos the written String
                 content = contentReader(input , commandSize); //read out the rest
                 if (content!=NULL){
                     printf("%s\n", content);
                 }
             }
-            else if (!strcmp(command,"history")){
+            else if (!strncmp(command,"history",7)){
                 content = contentReader(input , commandSize); //read out the rest
                 historyFunc(content, history, historyCollumCount);
             }
-            else if (!strcmp(command,"ls")){
+            else if (!strncmp(command,"ls",2)){
                 content = contentReader(input , commandSize); //read out the rest
                 ls(content);
             }
-            else if (!strcmp(command,"grep")){
+            else if (!strncmp(command,"grep",4)){
                 content = contentReader(input , commandSize); //read out the rest
                 if(content!=NULL){
                     grep(content);
@@ -295,7 +295,7 @@ int main(){
     if (history!=NULL){
         free(history);
     }
-    
+    free(input);
 return 0;
 }
 
