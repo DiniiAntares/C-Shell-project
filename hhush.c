@@ -158,7 +158,7 @@ char *grep(char *parameters){
 /*
  *Filters the command
  */
-char commandReader(char whatToRead[], char command[256]){ //Input is given by main
+void commandReader(char whatToRead[], char command[256]){ //Input is given by main
     
     if (strlen(whatToRead)<257) {
         int k = 0;
@@ -170,7 +170,7 @@ char commandReader(char whatToRead[], char command[256]){ //Input is given by ma
                         command[j-k] = whatToRead[j];
                         command[j-k+1] = '\0';
                     }
-                    //return strtok(usable, "\0");
+                    break;//return strtok(usable, "\0");
                 }
             }
             else k++; //Counts the WS before the command
@@ -197,7 +197,7 @@ void contentReader(char fullInput[], int sizeOfCommand, char content[256]){
             }
             //return strtok(content,"\0");
     }else{
-        content[0] = '\0';
+        content = NULL;
         //return strtok(content,"\0");
     }
 }
@@ -220,7 +220,6 @@ int main(){
         for(historyCollumCount=0; fgets(&(history[historyCollumCount * 256]), 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
             historyCollumCount++;
             history=realloc(history,(1+historyCollumCount) * 256 * sizeof(char)); //malloc enouth to put the fileContent in the historyList
-            
         }
     fclose(historyFile);
     }
@@ -235,13 +234,13 @@ int main(){
             historyCollumCount++;
             strcpy(&(history[historyCollumCount * 256]), input);
             
-            command = commandReader(input, command); //read out the command.
-//          commandReader(input);
+            commandReader(input, command); //read out the command.
             commandSize = strlen(command);
             
+
             if (!strncmp(command,"exit", 4)){
-                content = contentReader(input , commandSize, content); //read out the rest
-                if (content!=NULL){       
+                contentReader(input , commandSize, content); //read out the rest
+                if (content==NULL){
                     printf("invalid arguments\n");
                 }
                 else{
@@ -251,7 +250,7 @@ int main(){
                 }
             }
             else if (!strncmp(command,"date",4)){ 
-                content = contentReader(input , commandSize, content); //read out the rest
+                contentReader(input , commandSize, content); //read out the rest
                 if (content!=NULL){
                     printf("invalid arguments\n");
                 }
@@ -260,7 +259,7 @@ int main(){
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
-                content = contentReader(input , commandSize, content); //read out the rest
+                contentReader(input , commandSize, content); //read out the rest
                 if (content!=NULL){
                     cd(content);
                 }else{
@@ -268,21 +267,21 @@ int main(){
                 }
             }
             else if (!strncmp(command,"echo",4)){ //Echos the written String
-                content = contentReader(input , commandSize, content); //read out the rest
+                contentReader(input , commandSize, content); //read out the rest
                 if (content!=NULL){
                     printf("%s\n", content);
                 }
             }
             else if (!strncmp(command,"history",7)){
-                content = contentReader(input , commandSize, content); //read out the rest
+                contentReader(input , commandSize, content); //read out the rest
                 historyFunc(content, history, historyCollumCount);
             }
             else if (!strncmp(command,"ls",2)){
-                content = contentReader(input , commandSize, content); //read out the rest
+                contentReader(input , commandSize, content); //read out the rest
                 ls(content);
             }
             else if (!strncmp(command,"grep",4)){
-                content = contentReader(input , commandSize, content); //read out the rest
+                contentReader(input , commandSize, content); //read out the rest
                 if(content!=NULL){
                     grep(content);
                 }
