@@ -47,15 +47,16 @@ void date(){
  */
 void historyFunc(char *parameters, char *historyContent, int histLength){ 
     
-    if ( !strcmp(parameters, "-c")){
-        printf("invalid arguments\n"); //TODO add parameters to delete the history and print specific lines
-    }
-    else if (historyContent != NULL){
-        for (int i=0;i<histLength;i++){ //print double-linked list
-        printf("%s",&(historyContent[i*258]));
+    if ( parameters == NULL && historyContent != NULL){
+            for (int i=0;i<histLength;i++){ //print double-linked list
+            printf("%s",&(historyContent[i*258]));
+            }
+        }
+    else if ( !strcmp(parameters, "-c")){
+        for(int i=0 ;i<histLength*258;i++){
+            historyContent[i] = '\0'; //TODO add parameters to delete the history and print specific line
         }
     }
-    
 }
 
 /*
@@ -105,10 +106,10 @@ void ls(char *content){
  * Read out content from file and search a pattern
  */
 char *grep(char *parameters){
-    char *grepOutput = 0;    //TODO : add malloc !!
     char pattern[258];
     char filename[258];
-    char *grepFileContent = 0 ;
+    char *grepOutput = malloc(258 * sizeof(char)); //Malloc something to prevent NULLPOINTER
+    char *grepFileContent = malloc(258 * sizeof(char)); //Malloc something to prevent NULLPOINTER
     FILE *grepFilePointer = 0;
     int enouth=0;
     
@@ -123,8 +124,9 @@ char *grep(char *parameters){
             filename[k+1]='\0';
             k++;
         }
-/*FEHLER IN DER ZEILE, FILE WIRD NICHT GEÖFFNET*/        if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
-            grepOutput = malloc(258 * sizeof(char));
+        printf("%s", filename);
+        grepFilePointer = fopen(filename,"r");
+/*FEHLER IN DER ZEILE, FILE WIRD NICHT GEÖFFNET*/ if(grepFilePointer != NULL){ //try to open the file to read out rhe content
             for (int i = 0 ;(fgets(&(grepFileContent[i*258]),258 , grepFilePointer)); ){ //get content of file
                 if(strstr(grepFileContent, pattern)!= NULL) { //Put every appearence of pattern to output
                     for(int p=0; grepFileContent[i*258+p] != '\n' ;p++){
@@ -132,13 +134,13 @@ char *grep(char *parameters){
                             enouth = 1;
                         }
                     }
-                    if (enouth != 1){
-                        grepOutput = realloc(grepOutput, (i * 258 + k) * sizeof(char));
+                    if (enouth != 1){ //Check size of grepOutput
+                        grepOutput = realloc(grepOutput, (i * 258 + k) * sizeof(char)); //extend if to small
                     }
                 }
                 // printf("%s\n",grepOutput);
             }
-            printf("%s",grepOutput);
+            printf("%s\n",grepOutput);
             fclose(grepFilePointer);
             free(grepOutput);
         }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
@@ -213,7 +215,7 @@ int main(){
     char *history = 0;
     int historyCollumCount=0;
     history=malloc(258*sizeof(char));
-    
+    char input[258];
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
         for(historyCollumCount=0; fgets(&(history[historyCollumCount * 258]), 258, historyFile) ; ){//Read out .hhush.histfile and put it in the history
             historyCollumCount++;
@@ -222,11 +224,11 @@ int main(){
         }
     fclose(historyFile);
     }
-
+    input[0] = '\0';
     while(1){
         printf("%s $ " ,get_current_dir_name());   //Print current directory
-        char input[258];
-        fgets(input, 256, stdin);
+        
+        fgets(input, 258, stdin); //Why does it always missread the first input?
 
         if (input[0]!='\n'){
             history=realloc(history, (2+historyCollumCount) * 258 * sizeof(char)); //add new line to history
@@ -293,6 +295,7 @@ int main(){
     if (history!=NULL){
         free(history);
     }
+    
 return 0;
 }
 
