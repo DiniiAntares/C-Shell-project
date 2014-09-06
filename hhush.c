@@ -3,6 +3,7 @@
 * C-Project: Build a Shell
 */
 
+//Allowed includes
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
@@ -10,18 +11,16 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <dirent.h>
-
-//Allowed includes
-// #include <assert.h>
-// #include <errno.h>
-// #include <float.h>
-// #include <limits.h>
-// #include <locale.h>
-// #include <math.h>
-// #include <setjmp.h>
-// #include <signal.h>
-// #include <stdarg.h>
-// #include <stddef.h>
+#include <assert.h>
+#include <errno.h>
+#include <float.h>
+#include <limits.h>
+#include <locale.h>
+#include <math.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stddef.h>
 
 /*
  * Vorwärtsdeklarationen, unnötig da funktionen vor Main sind
@@ -190,7 +189,7 @@ void contentReader(char fullInput[], int sizeOfCommand, char content[256]){
     
     int k=0;
     if (fullInput != NULL && fullInput[sizeOfCommand+1] != '\0'){
-            for (int i = sizeOfCommand+1; i < strlen(fullInput)-1; i++){
+            for (int i = sizeOfCommand+1; i < strlen(fullInput)-1 && fullInput[i+1] != '|' ; i++){
             content[k] = fullInput[i];
             content[k+1] = '\0';
             k++;
@@ -199,6 +198,28 @@ void contentReader(char fullInput[], int sizeOfCommand, char content[256]){
     }else{
         content = NULL;
         //return strtok(content,"\0");
+    }
+}
+
+/*
+ * Pipes the line
+ */
+void pipes(char fullInput[], char firstInput[256], char secondInput[256]){
+    int counter=0;
+    
+    //firstInput=NULL;
+    //secondInput=NULL;
+    
+    for (counter=0; counter<(strlen(fullInput))+1;counter++){
+        firstInput[counter]=fullInput[counter]; //first command and content
+        firstInput[counter+1]='\0';
+        if( fullInput[counter+1]== '|'){
+            for(int i=0;i < strlen(fullInput);i++){ //scond command and content
+                secondInput[i] = fullInput[i+counter+2];
+                secondInput[i+1]= '\0';
+            }
+            break;
+            }
     }
 }
 
@@ -215,6 +236,12 @@ int main(){
     char *history = NULL;
     int historyCollumCount = 0;
     history=malloc(256*sizeof(char));
+    
+    char firstInput[256]; //Used...
+    char secondInput[256];//...for...
+    int pipecount=0;//...Piplines
+    
+    
     char *input=malloc(258*sizeof(char));
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
         for(historyCollumCount=0; fgets(&(history[historyCollumCount * 256]), 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
@@ -225,6 +252,10 @@ int main(){
     }
     input[0] = '\0';
     while(1){
+        
+        firstInput[0] = '\0';
+        secondInput[0]= '\0';
+        
         printf("%s $ " ,get_current_dir_name());   //Print current directory
         
         fgets(input, 256, stdin); //Why does it always missread the first input?
@@ -234,12 +265,29 @@ int main(){
             historyCollumCount++;
             strcpy(&(history[historyCollumCount * 256]), input);
             
-            commandReader(input, command); //read out the command.
-            commandSize = strlen(command);
+            pipes(input, firstInput, secondInput);      //First the function cheks...
+            if (secondInput[0] != '\0'){                      //if there is a pipeline (pipecount= 1 or 2)...
+                pipecount=2;                            //then it splits the fullInput into two and...
+            }                                           //use both in loop.
+            else{
+                pipecount=1;
+            }
+            for (int i=0; pipecount != 0 ; pipecount--, i++){ 
+                if (i==0){
+                    commandReader(firstInput, command); //read out the command.
+                    commandSize = strlen(command);
+                }else if (i==1){
+                    commandReader(secondInput, command); //read out the command.
+                    commandSize = strlen(command);
+                }
             
 
             if (!strncmp(command,"exit", 4)){
-                contentReader(input , commandSize, content); //read out the rest
+                if(i==0){
+                    contentReader(firstInput , commandSize, content); //read out the rest
+                }else if(i==1){
+                    contentReader(secondInput , commandSize, content); //read out the rest
+                }
                 if (content==NULL){
                     printf("invalid arguments\n");
                 }
@@ -250,7 +298,11 @@ int main(){
                 }
             }
             else if (!strncmp(command,"date",4)){ 
-                contentReader(input , commandSize, content); //read out the rest
+                if(i==0){
+                    contentReader(firstInput , commandSize, content); //read out the rest
+                }else if(i==1){
+                    contentReader(secondInput , commandSize + strlen(firstInput), content); //read out the rest
+                }
                 if (content!=NULL){
                     printf("invalid arguments\n");
                 }
@@ -259,7 +311,11 @@ int main(){
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
-                contentReader(input , commandSize, content); //read out the rest
+                if(i==0){
+                    contentReader(firstInput , commandSize, content); //read out the rest
+                }else if(i==1){
+                    contentReader(secondInput , commandSize, content); //read out the rest
+                }
                 if (content!=NULL){
                     cd(content);
                 }else{
@@ -267,27 +323,45 @@ int main(){
                 }
             }
             else if (!strncmp(command,"echo",4)){ //Echos the written String
-                contentReader(input , commandSize, content); //read out the rest
+                if(i==0){
+                    contentReader(firstInput , commandSize, content); //read out the rest
+                }else if(i==1){
+                    contentReader(secondInput , commandSize, content); //read out the rest
+                }
                 if (content!=NULL){
                     printf("%s\n", content);
                 }
             }
             else if (!strncmp(command,"history",7)){
-                contentReader(input , commandSize, content); //read out the rest
+                if(i==0){
+                    contentReader(firstInput , commandSize, content); //read out the rest
+                }else if(i==1){
+                    contentReader(secondInput , commandSize, content); //read out the rest
+                } 
                 historyFunc(content, history, historyCollumCount);
             }
             else if (!strncmp(command,"ls",2)){
-                contentReader(input , commandSize, content); //read out the rest
+                if(i==0){
+                    contentReader(firstInput , commandSize, content); //read out the rest
+                }else if(i==1){
+                    contentReader(secondInput , commandSize, content); //read out the rest
+                }
                 ls(content);
             }
             else if (!strncmp(command,"grep",4)){
-                contentReader(input , commandSize, content); //read out the rest
+                if(i==0){
+                    contentReader(firstInput , commandSize, content); //read out the rest
+                }else if(i==1){
+                    contentReader(secondInput , commandSize, content); //read out the rest
+                } 
                 if(content!=NULL){
                     grep(content);
                 }
             }
             else{
                 printf("comand not found\n");
+            }
+            
             }
         }
     }
