@@ -95,7 +95,7 @@ void cd(char *directory){
  * Prints the current directions content.
  */
 void ls(char *content, char firstPipeOutput[], int pipecount){
-    if(content==NULL){
+    if(content[0]== '\0'){
         DIR *directory;
         struct dirent *dirStruct;           //Creates a Struct
         directory = opendir(".");  //Open Directory
@@ -124,7 +124,7 @@ void ls(char *content, char firstPipeOutput[], int pipecount){
 /*
  * Read out content from file and search a pattern
  */
-char *grep(char *parameters){
+char *grep(char *parameters, int pipecount, char firstPipeOutput[], char secondPipeOutput[]){
     char pattern[256];
     char filename[256];
     char *grepOutput = malloc(256 * sizeof(char)); //Malloc something to prevent NULLPOINTER
@@ -132,7 +132,7 @@ char *grep(char *parameters){
     FILE *grepFilePointer = 0;
     int enouth=0;
     
-    if(parameters != 0){    //Read out the searched pattern and file name;
+    if(parameters[0] != '\0'){    //Read out the searched pattern and file name;
         int k=0;
         enouth = 1;
         for (int i = 0; !isspace(parameters[i]);i++){ //Read out the searched pattern...
@@ -144,28 +144,40 @@ char *grep(char *parameters){
             filename[k+1]='\0';
             k++;
         }
-        printf("%s", filename);
-        grepFilePointer = fopen(filename,"r");
-/*FEHLER IN DER ZEILE, FILE WIRD NICHT GEÖFFNET*/ if(grepFilePointer != NULL){ //try to open the file to read out rhe content
-            for (int i = 0 ;(fgets(&(grepFileContent[i*256]),256 , grepFilePointer)); ){ //get content of file
-                if(strstr(grepFileContent, pattern)!= NULL) { //Put every appearence of pattern to output
-                    for(int p=0; grepFileContent[i*256+p] != '\n' ;p++){
-                        if (grepFileContent[i*256+p+1] == '\n'){
-                            enouth = 1;
+        
+        
+         if(pipecount == 1){
+            grepFilePointer = fopen(filename,"r");
+            if(grepFilePointer != NULL){ //try to open the file to read out rhe content
+                for (int i = 0 ;(fgets(&(grepFileContent[i*256]),256 , grepFilePointer)); ){ //get content of file
+                    if(strstr(grepFileContent, pattern)!= NULL) { //Put every appearence of pattern to output
+                        for(int p=0; grepFileContent[i*256+p] != '\n' ;p++){
+                            if (grepFileContent[i*256+p+1] == '\n'){
+                                enouth = 1;
+                            }
+                        }
+                        if (enouth != 1){ //Check size of grepOutput
+                            grepOutput = realloc(grepOutput, (i * 256 + k) * sizeof(char)); //extend if to small
                         }
                     }
-                    if (enouth != 1){ //Check size of grepOutput
-                        grepOutput = realloc(grepOutput, (i * 256 + k) * sizeof(char)); //extend if to small
-                    }
                 }
-                // printf("%s\n",grepOutput);
+                printf("%s\n",grepOutput);
+                fclose(grepFilePointer);
+                free(grepOutput);
+            }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
+                printf("no such file!\n");
             }
-            printf("%s\n",grepOutput);
-            fclose(grepFilePointer);
-            free(grepOutput);
-        }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
-            printf("no such file!\n");
+        
         }
+        if (pipecount==2){
+            for (int i = 0; i*256 < strlen(firstPipeOutput);i++){
+                if (strstr(&firstPipeOutput[i], pattern) != 0){
+                    secondPipeOutput = realloc(secondPipeOutput, (1+i)*sizeof(char));
+                    strcat(&secondPipeOutput[i], &firstPipeOutput[i]);
+                }
+            }
+        }
+        
         return "Exit Success!";
     }
     else {
@@ -295,8 +307,8 @@ int main(){
             strcpy(&(history[historyCollumCount * 256]), input);
             
             pipes(input, firstInput, secondInput);      //First the function cheks...
-            if (secondInput[0] != '\0'){                      //if there is a pipeline (pipecount= 1 or 2)...
-                pipecount=2;                            //then it splits the fullInput into two and...
+            if (strstr(input, "|") != NULL)/*secondInput[0] != '\0')*/{                      //if there is a pipeline (pipecount= 1 or 2)...
+                pipecount = 2;                            //then it splits the fullInput into two and...
             }                                           //use both in loop.
             else{
                 pipecount=1;
@@ -389,7 +401,7 @@ int main(){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
                 if(content[0]!='\0'){
-                    grep(content);
+                    grep(content, pipecount, firstPipeOutput, secondPipeOutput);
                 }
             }
             else{
@@ -397,9 +409,12 @@ int main(){
             }
             
             }
-        if (exitint==0){
-            break;
-        }
+            if (pipecount==0){
+                printf("%s", secondPipeOutput);
+            }
+            if (exitint==0){
+                break;
+            }
         }
         
     }
