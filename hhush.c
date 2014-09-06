@@ -157,19 +157,19 @@ char *grep(char *parameters){
 /*
  *Filters the command
  */
-void commandReader(char whatToRead[], char command[256]){ //Input is given by main
-    
+void commandReader(char whatToRead[], char command[256], int *wsCounter){ //Input is given by main
+    *wsCounter=0;
     if (strlen(whatToRead)<257) {
         int k = 0;
         for (int i=0; i<257 ;i++){ //Condition to look out for WS(Whitespaces)
             if (!isspace(whatToRead[i])){
                 if ( isspace(whatToRead[i+1])){
-                    //char usable[i+1];       //Create a new String/CharArray to contain the non whitespace parts
                     for (int j=k;j<i+1;j++){ //j=k because of the possible WhiteSpaces at the beginning of the String
                         command[j-k] = whatToRead[j];
                         command[j-k+1] = '\0';
                     }
-                    break;//return strtok(usable, "\0");
+                    *wsCounter = k;
+                    break;//end loop
                 }
             }
             else k++; //Counts the WS before the command
@@ -214,7 +214,7 @@ void pipes(char fullInput[], char firstInput[256], char secondInput[256]){
         firstInput[counter]=fullInput[counter]; //first command and content
         firstInput[counter+1]='\0';
         if( fullInput[counter+1]== '|'){
-            for(int i=0;i < strlen(fullInput);i++){ //scond command and content
+            for(int i=0;i < strlen(fullInput);i++){ //second command and content
                 secondInput[i] = fullInput[i+counter+2];
                 secondInput[i+1]= '\0';
             }
@@ -236,6 +236,7 @@ int main(){
     char *history = NULL;
     int historyCollumCount = 0;
     history=malloc(256*sizeof(char));
+    int *wsCounter=malloc(sizeof(int));
     
     char firstInput[256]; //Used...
     char secondInput[256];//...for...
@@ -274,11 +275,11 @@ int main(){
             }
             for (int i=0; pipecount != 0 ; pipecount--, i++){ 
                 if (i==0){
-                    commandReader(firstInput, command); //read out the command.
-                    commandSize = strlen(command);
+                    commandReader(firstInput, command, wsCounter); //read out the command.
+                    commandSize = strlen(command) + *wsCounter;
                 }else if (i==1){
-                    commandReader(secondInput, command); //read out the command.
-                    commandSize = strlen(command);
+                    commandReader(secondInput, command, wsCounter); //read out the command.
+                    commandSize = strlen(command) + *wsCounter;
                 }
             
 
