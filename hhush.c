@@ -36,19 +36,29 @@
 /*
  * Prints the current date+time.
  */
-void date(){
+void date(char firstPipeOutput[], int pipecount){
     time_t currentTime = time(NULL);    //create a var out of time_t
-    printf("%s", asctime(localtime(&currentTime))); //Arange and print Time
+    if(pipecount==2){
+        firstPipeOutput = asctime(localtime(&currentTime));
+    }
+    else{
+        printf("%s", asctime(localtime(&currentTime))); //Arange and print Time
+    }
 }
 
 /**
  * Interacts with the history
  */
-void historyFunc(char *parameters, char *historyContent, int histLength){ 
+void historyFunc(char *parameters, char *historyContent, int histLength, char firstPipeOutput[], int pipecount){ 
     
-    if ( parameters == NULL && historyContent != NULL){
+    if ( parameters[0] == '\0' && historyContent != NULL){
             for (int i=0;i<histLength+1;i++){ //print double-linked list
-            printf("%s",&(historyContent[i*256]));
+                if (pipecount ==2){
+                    firstPipeOutput[i*256] = historyContent[i*256];
+                    firstPipeOutput = realloc(firstPipeOutput, i*256*sizeof(char)) ;
+                }else {
+                    printf("%s",&(historyContent[i*256]));
+                }
             }
         }
     else if ( !strcmp(parameters, "-c")){
@@ -84,14 +94,24 @@ void cd(char *directory){
 /**
  * Prints the current directions content.
  */
-void ls(char *content){
+void ls(char *content, char firstPipeOutput[], int pipecount){
     if(content==NULL){
         DIR *directory;
         struct dirent *dirStruct;           //Creates a Struct
         directory = opendir(".");  //Open Directory
         if (directory != NULL){
-            while((dirStruct = readdir(directory)) != NULL){ //loop the output
+            if (pipecount== 2){
+                
+                int i = 0;
+                while((dirStruct = readdir(directory)) != NULL){ //loop the output
+                sprintf(&firstPipeOutput[256*i] ,"%s\n", dirStruct->d_name); //Read out Directory trough the Struct
+                i++;
+                firstPipeOutput=realloc(firstPipeOutput, (1+i) * 256 * sizeof(char));
+            }
+            }else{
+                while((dirStruct = readdir(directory)) != NULL){ //loop the output
                 printf("%s\n", dirStruct->d_name); //Read out Directory trough the Struct
+            }
             }
         }
         closedir(directory); //Close Directory{
@@ -114,6 +134,7 @@ char *grep(char *parameters){
     
     if(parameters != 0){    //Read out the searched pattern and file name;
         int k=0;
+        enouth = 1;
         for (int i = 0; !isspace(parameters[i]);i++){ //Read out the searched pattern...
             pattern[i] = parameters[i];
             pattern[i+1]='\0';
@@ -196,7 +217,7 @@ void contentReader(char fullInput[], int sizeOfCommand, char content[256]){
             }
             //return strtok(content,"\0");
     }else{
-        content = NULL;
+        content[0] = '\0';
         //return strtok(content,"\0");
     }
 }
@@ -237,11 +258,15 @@ int main(){
     int historyCollumCount = 0;
     history=malloc(256*sizeof(char));
     int *wsCounter=malloc(sizeof(int));
+    static int exitint=1;
     
     char firstInput[256]; //Used...
     char secondInput[256];//...for...
     int pipecount=0;//...Piplines
     
+    char *firstPipeOutput=malloc(256*sizeof(char));
+    char *secondPipeOutput=malloc(256*sizeof(char));
+    char *fullOutput=malloc(256*sizeof(char));
     
     char *input=malloc(258*sizeof(char));
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
@@ -256,7 +281,10 @@ int main(){
         
         firstInput[0] = '\0';
         secondInput[0]= '\0';
-        
+        content[0]= '\0';
+        command[0]= '\0';
+
+
         printf("%s $ " ,get_current_dir_name());   //Print current directory
         
         fgets(input, 256, stdin); //Why does it always missread the first input?
@@ -289,12 +317,13 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 }
-                if (content==NULL){
+                if (content[0]!='\0'){
                     printf("invalid arguments\n");
                 }
                 else{
                     cd(startDir);
                     historySave(history, historyCollumCount);
+                    exitint = 0;
                     break;
                 }
             }
@@ -304,11 +333,11 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize + strlen(firstInput), content); //read out the rest
                 }
-                if (content!=NULL){
+                if (content[0]!='\0'){
                     printf("invalid arguments\n");
                 }
                 else{
-                date();
+                date(firstPipeOutput, pipecount);
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
@@ -317,7 +346,7 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 }
-                if (content!=NULL){
+                if (content[0]!='\0'){
                     cd(content);
                 }else{
                     printf("there is no such path\n");
@@ -329,7 +358,7 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 }
-                if (content!=NULL){
+                if (content[0]!='\0'){
                     printf("%s\n", content);
                 }
             }
@@ -339,7 +368,7 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
-                historyFunc(content, history, historyCollumCount);
+                historyFunc(content, history, historyCollumCount, firstPipeOutput, pipecount);
             }
             else if (!strncmp(command,"ls",2)){
                 if(i==0){
@@ -347,7 +376,11 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 }
-                ls(content);
+                if (content[0]!='\0'){
+                    printf("invalid parameters");
+                }else{
+                    ls(content, firstPipeOutput, pipecount);
+                }
             }
             else if (!strncmp(command,"grep",4)){
                 if(i==0){
@@ -355,7 +388,7 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
-                if(content!=NULL){
+                if(content[0]!='\0'){
                     grep(content);
                 }
             }
@@ -364,12 +397,19 @@ int main(){
             }
             
             }
+        if (exitint==0){
+            break;
         }
+        }
+        
     }
     if (history!=NULL){
         free(history);
     }
     free(input);
+    free(firstPipeOutput);
+    free(secondPipeOutput);
+    free(fullOutput);
 return 0;
 }
 
