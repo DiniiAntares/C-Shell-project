@@ -181,12 +181,20 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char secondP
         
         }
         else if (strstr(fullInput, "|") != NULL){
-            for (int i = 0; i < strlen(firstPipeOutput);i++){
-                if (strstr(&firstPipeOutput[i], pattern) != 0){
-                    secondPipeOutput = realloc(secondPipeOutput, (1+i)*256*sizeof(char));
-                    strcat(&secondPipeOutput[i], &firstPipeOutput[i]);
+            char tempString[256];
+            for (int i = 0, t=0; i < strlen(firstPipeOutput);t++, i=i+1+strlen(tempString)){  //Fehler hier!
+                tempString[0]='\0';
+                for (int c = 0; firstPipeOutput[i+c] != '\n'  ;c++ ){
+                    tempString[c]=firstPipeOutput[i+c];
+                    tempString[c+1]='\0';
+                }
+                if (strstr(tempString, pattern) != 0){
+                    secondPipeOutput = realloc(secondPipeOutput, (1+t)*256*sizeof(char));
+                    strcat(secondPipeOutput, tempString);
+                    strcat(secondPipeOutput, "\n");
                 }
             }
+            printf("%s", secondPipeOutput);
         }
         
         return "Exit Success!";
@@ -420,9 +428,9 @@ int main(){
             }
             
             }
-            if (strstr(input, "|") != NULL){
-                printf("%s", secondPipeOutput);
-            }
+//             if (strstr(input, "|") != NULL){
+//                 printf("%s", secondPipeOutput);
+//             }
             if (exitint==0){
                 break;
             }
