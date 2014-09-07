@@ -97,6 +97,7 @@ void cd(char *directory){
 void ls(char *content, char firstPipeOutput[], int pipecount){
     if(content[0]== '\0'){
         DIR *directory;
+        firstPipeOutput[0]='\0';
         struct dirent *dirStruct;           //Creates a Struct
         directory = opendir(".");  //Open Directory
         if (directory != NULL){
@@ -106,6 +107,7 @@ void ls(char *content, char firstPipeOutput[], int pipecount){
             while((dirStruct = readdir(directory)) != NULL){ //loop the output
                 if(firstPipeOutput==NULL){
                         firstPipeOutput=malloc(strlen(dirStruct->d_name)+1);
+                        if(firstPipeOutput==NULL) break;
                         strcpy(firstPipeOutput,dirStruct->d_name);
                         strcat(firstPipeOutput,"\n");
                 }else{
@@ -113,11 +115,6 @@ void ls(char *content, char firstPipeOutput[], int pipecount){
                         strcat(firstPipeOutput,dirStruct->d_name);
                         strcat(firstPipeOutput,"\n");
                 }
-//                 int i = 0;
-//                 while((dirStruct = readdir(directory)) != NULL){ //loop the output
-//                 sprintf(&firstPipeOutput[256*i] ,"%s\n", dirStruct->d_name); //Read out Directory trough the Struct
-//                 i++;        //PROBLEM HIER IRGENDWO
-//                 firstPipeOutput=realloc(firstPipeOutput, (1+i) * 256 * sizeof(char));
             }
             }else{
                 while((dirStruct = readdir(directory)) != NULL){ //loop the output
@@ -135,13 +132,16 @@ void ls(char *content, char firstPipeOutput[], int pipecount){
 /*
  * Read out content from file and search a pattern
  */
-char *grep(char *parameters, int pipecount, char firstPipeOutput[], char secondPipeOutput[], char fullInput[]){
+char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInput[]){
     char pattern[256];
     char filename[256];
     char *grepOutput = malloc(256 * sizeof(char)); //Malloc something to prevent NULLPOINTER
     char *grepFileContent = malloc(256 * sizeof(char)); //Malloc something to prevent NULLPOINTER
     FILE *grepFilePointer = 0;
     int enouth=0;
+    
+    char *secondPipeOutput=malloc(256*sizeof(char));
+    secondPipeOutput[0]='\0';
     
     if(parameters[0] != '\0'){    //Read out the searched pattern and file name;
         int k=0;
@@ -189,7 +189,7 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char secondP
                     tempString[c+1]='\0';
                 }
                 if (strstr(tempString, pattern) != 0){
-                    secondPipeOutput = realloc(secondPipeOutput, (1+t)*256*sizeof(char));
+                    if((secondPipeOutput = realloc(secondPipeOutput, (1+t)*256*sizeof(char)))!= NULL);
                     strcat(secondPipeOutput, tempString);
                     strcat(secondPipeOutput, "\n");
                 }
@@ -197,10 +197,13 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char secondP
             printf("%s", secondPipeOutput);
         }
         
+        free(secondPipeOutput);
+        
         return "Exit Success!";
     }
     else {
         printf("invalid parameters\n");
+        free(secondPipeOutput);
         return "Exit but you go a problem dude!";
     }
     
@@ -217,7 +220,7 @@ void commandReader(char whatToRead[], char command[256], int *wsCounter){ //Inpu
             if (!isspace(whatToRead[i])){
                 if ( isspace(whatToRead[i+1])){
                     for (int j=k;j<i+1;j++){ //j=k because of the possible WhiteSpaces at the beginning of the String
-                         command[j-k] = whatToRead[j];
+                        command[j-k] = whatToRead[j];
                         command[j-k+1] = '\0';
                     }
                     *wsCounter = k;
@@ -296,7 +299,7 @@ int main(){
     int pipecount=0;//...Piplines
     
     char *firstPipeOutput=malloc(256*sizeof(char));
-    char *secondPipeOutput=malloc(256*sizeof(char));
+    
     char *fullOutput=malloc(256*sizeof(char));
     
     char *input=malloc(258*sizeof(char));
@@ -420,7 +423,7 @@ int main(){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
                 if(content[0]!='\0'){
-                    grep(content, pipecount, firstPipeOutput, secondPipeOutput, input);
+                    grep(content, pipecount, firstPipeOutput, input);
                 }
             }
             else{
@@ -442,7 +445,6 @@ int main(){
     }
     free(input);
     free(firstPipeOutput);
-    free(secondPipeOutput);
     free(fullOutput);
 return 0;
 }
