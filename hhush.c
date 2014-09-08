@@ -75,25 +75,25 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
     
     
     if ((!strcmp(parameters, "-c")) == 0){
-        if (parameters[0] == '\0' && historyContent != NULL || collumCountCheck > (*histLength)){
-            tempCounter = (*histLength);
+        if ((parameters[0] == '\0' && historyContent != NULL) || collumCountCheck > (*histLength)){
+            tempCounter = 2 * (*histLength);
         }
         else if (collumCountCheck > 0 && parameters[0] != '0' ){
             tempCounter = collumCountCheck;
         }
-        for (int i=(*histLength)-tempCounter;i<*histLength;i++){ //print double-linked list
+        for (int i=0;i<*histLength;i++){ //print double-linked list
             if (pipecount ==2){
                 if (firstPipeOutput[0]=='\0'){
                     firstPipeOutput=malloc(strlen(historyContent));
                     if (firstPipeOutput==NULL) return "error";
                 }
                 else{
-                    firstPipeOutput = realloc(firstPipeOutput, (i-(*histLength)+tempCounter)*256*sizeof(char)) ;
+                    firstPipeOutput = realloc(firstPipeOutput, (*histLength)*256*sizeof(char)) ;
                     if(firstPipeOutput==NULL)return "fail";
-                    firstPipeOutput[(i-(*histLength)+tempCounter)*256] = historyContent[i*256];
+                    firstPipeOutput[i*256] = historyContent[i*256];
                 }
-            }else {
-                printf("%s",&(historyContent[(i-1)*256]));
+            }else if (tempCounter+1>=(*histLength-i)){
+                printf("%s",&(historyContent[i*256]));
             }
         }
         return firstPipeOutput;
@@ -110,34 +110,6 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
     }else if ((!strcmp(parameters, "-c")) == 0 && parameters[0] == '0'  && (collumCountCheck) == '0'){
         printf("invalid arguments");
     }
-    
-//     else if (collumCountCheck > 0 && parameters[0] != '0' )
-//         
-//         for (int i=0;i<collumCountCheck;i++){ //print i lines of history
-//                 if (pipecount ==2){
-//                     if (firstPipeOutput[0]=='\0'){
-//                         firstPipeOutput=malloc(strlen(historyContent)*sizeof(char));
-//                         if (firstPipeOutput==NULL) return "error";
-//                     }
-//                     else{
-//                         firstPipeOutput = realloc(firstPipeOutput, (strlen(historyContent))*sizeof(char)) ;
-//                         if(firstPipeOutput==NULL)return "fail";
-//                         firstPipeOutput[i*256] = historyContent[i*256];
-//                     }
-//                 }else {
-//                     if (firstPipeOutput[0]=='\0'){
-//                         firstPipeOutput=malloc(strlen(historyContent)*sizeof(char));
-//                         if (firstPipeOutput==NULL) return "error";
-//                         firstPipeOutput[i*256] = historyContent[i*256];
-//                     }
-//                     else{
-//                         firstPipeOutput = realloc(firstPipeOutput, strlen(historyContent)*sizeof(char)) ;
-//                         if(firstPipeOutput==NULL)return "fail";
-//                         firstPipeOutput[i*256] = historyContent[i*256];
-//                     }
-//                     printf("%s\n",firstPipeOutput);
-//                 }
-//             }
     return firstPipeOutput;
     return "exit";
 }
