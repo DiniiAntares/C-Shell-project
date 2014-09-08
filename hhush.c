@@ -51,12 +51,15 @@ char *date(int pipecount){
 /**
  * Interacts with the history
  */
-char *historyFunc(char *parameters, char *historyContent, int histLength, int pipecount){ 
+char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount){ 
     char *firstPipeOutput=malloc(sizeof(char));
+    
+    int collumCountCheck= atoi(parameters);
+    
     if (firstPipeOutput==NULL) return "Error";
     firstPipeOutput[0] = '\0';
     if ( parameters[0] == '\0' && historyContent != NULL){
-            for (int i=0;i<histLength+1;i++){ //print double-linked list
+            for (int i=0;i<*histLength+1;i++){ //print double-linked list
                 if (pipecount ==2){
                     if (firstPipeOutput[0]=='\0'){
                         firstPipeOutput=malloc(strlen(historyContent));
@@ -73,12 +76,35 @@ char *historyFunc(char *parameters, char *historyContent, int histLength, int pi
             }
             return firstPipeOutput;
         }
-    else if ( !strcmp(parameters, "-c")){
-        for(int i=0 ;i<histLength*257;i++){
+    else if ((!strcmp(parameters, "-c")) != 0){
+        for(int i=0 ;i<(*histLength) *257;i++){
             historyContent[i] = '\0'; //TODO why does it only delte sometimes?
         }
+        *histLength=0;
         return "exit";
+    }else if ((!strcmp(parameters, "-c")) == 0 && parameters[0] == '0'  && (collumCountCheck) == '0'){
+        printf("invalid arguments");
     }
+    
+    else if (collumCountCheck != '0' && parameters[0] != '0' )
+        
+        for (int i=0;i<collumCountCheck+1;i++){ //print double-linked list
+                if (pipecount ==2){
+                    if (firstPipeOutput[0]=='\0'){
+                        firstPipeOutput=malloc(strlen(historyContent));
+                        if (firstPipeOutput==NULL) return "error";
+                    }
+                    else{
+                        firstPipeOutput = realloc(firstPipeOutput, i*256*sizeof(char)) ;
+                        if(firstPipeOutput==NULL)return "fail";
+                        firstPipeOutput[i*256] = historyContent[i*256];
+                    }
+                }else {
+                    printf("%s",&(historyContent[i*256]));
+                }
+            }
+            return firstPipeOutput;
+
     return "exit";
 }
 
@@ -93,6 +119,19 @@ void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
         }
         fclose(historyFile);
     }
+}
+
+/*
+ *Add input line to history
+ */
+
+void  addHistoryLine(int historyCollumCount, char input[], char history[]){
+    char temp[strlen(input)+2];
+    //strcpy(temp, input);
+    history=realloc(history, (1+historyCollumCount) * 256 * sizeof(char)); //add new line to history
+    historyCollumCount--;
+    sprintf(temp, "%i %s",historyCollumCount, input);
+    strcpy(&(history[historyCollumCount * 256]), temp);
 }
 
 /**
@@ -259,8 +298,8 @@ void commandReader(char whatToRead[], char command[256], int *wsCounter){ //Inpu
     *wsCounter=0;
     if (strlen(whatToRead)<257) {
         int k = 0;
-        for (int i=0; i<257 ;i++){ //Condition to look out for WS(Whitespaces)
-            if (!isspace(whatToRead[i])){
+        for (int i=0; i<257 ;i++){
+            if (!isspace(whatToRead[i])){//Condition to look out for WS(Whitespaces)
                 if ( isspace(whatToRead[i+1])){
                     for (int j=k;j<i+1;j++){ //j=k because of the possible WhiteSpaces at the beginning of the String
                         command[j-k] = whatToRead[j];
@@ -275,10 +314,7 @@ void commandReader(char whatToRead[], char command[256], int *wsCounter){ //Inpu
     }
     else{ 
         printf("Your input is wrong.");//Print default message for unusable input
-        //char unusable[21] = "Your input is wrong.";
-        //return strtok(unusable, "\0");
     }
-    //return "Impossible!";
 }
 /*
  * Filters the content besides the command.
@@ -337,7 +373,7 @@ int main(){
     char *history = NULL;
     int historyCollumCount = 0;
     history=malloc(256*sizeof(char));
-    int *wsCounter=malloc(sizeof(int));
+    int wsCounter=0;
     static int exitint=1;
     
     char firstInput[256]; //Used...
@@ -371,9 +407,12 @@ int main(){
         fgets(input, 256, stdin); //Why does it always missread the first input?
 
         if (input[0]!='\n'){
-            history=realloc(history, (2+historyCollumCount) * 256 * sizeof(char)); //add new line to history
             historyCollumCount++;
-            strcpy(&(history[historyCollumCount * 256]), input);
+            addHistoryLine(historyCollumCount, input, history);
+//                 history=realloc(history, (2+historyCollumCount) * 256 * sizeof(char)); //add new line to history
+//                 historyCollumCount++;
+//                 sprintf(input, "%i ",historyCollumCount);
+//                 strcpy(&(history[historyCollumCount * 256]), input);
             
             pipes(input, firstInput, secondInput);     //split input to prepare pipes //First the function cheks...
             if (strstr(input, "|") != NULL)/*secondInput[0] != '\0')*/{                      //if there is a pipeline (pipecount= 1 or 2)...
@@ -384,11 +423,11 @@ int main(){
             }
             for (int i=0; pipecount != 0 ; pipecount--, i++){
                 if (i==0){
-                    commandReader(firstInput, command, wsCounter); //read out the command.
-                    commandSize = strlen(command) + *wsCounter;
+                    commandReader(firstInput, command, &wsCounter); //read out the command.
+                    commandSize = strlen(command) + wsCounter;
                 }else if (i==1){
-                    commandReader(secondInput, command, wsCounter); //read out the command.
-                    commandSize = strlen(command) + *wsCounter;
+                    commandReader(secondInput, command, &wsCounter); //read out the command.
+                    commandSize = strlen(command) + wsCounter;
                 }
             
 //Chek if input is a legit command
@@ -451,7 +490,7 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
-                firstPipeOutputMain=historyFunc(content, history, historyCollumCount, pipecount);
+                firstPipeOutputMain=historyFunc(content, history, &historyCollumCount, pipecount);
             }
             else if (!strncmp(command,"ls",2)){
                 if(i==0){
