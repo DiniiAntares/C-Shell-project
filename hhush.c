@@ -53,58 +53,92 @@ char *date(int pipecount){
  */
 char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount){ 
     char *firstPipeOutput=malloc(sizeof(char));
-    
     int collumCountCheck= atoi(parameters);
+    int parametersvalid = 1;
+    int tempCounter=0;
     
-    if (firstPipeOutput==NULL) return "Error";
-    firstPipeOutput[0] = '\0';
-    if ( parameters[0] == '\0' && historyContent != NULL){
-            for (int i=0;i<*histLength+1;i++){ //print double-linked list
-                if (pipecount ==2){
-                    if (firstPipeOutput[0]=='\0'){
-                        firstPipeOutput=malloc(strlen(historyContent));
-                        if (firstPipeOutput==NULL) return "error";
-                    }
-                    else{
-                        firstPipeOutput = realloc(firstPipeOutput, i*256*sizeof(char)) ;
-                        if(firstPipeOutput==NULL)return "fail";
-                        firstPipeOutput[i*256] = historyContent[i*256];
-                    }
-                }else {
-                    printf("%s",&(historyContent[i*256]));
+    for (int i = 0;i<strlen(parameters);i++){ //Trimm pattern to check if allowed
+        if (!isspace(parameters[i+1])){
+            for (int k=0; k<strlen(parameters)-i+1;k++){
+                if (!isspace(parameters[i+k])&& strcmp(parameters, "-c") && collumCountCheck <= 0){
+                    parametersvalid=0;
                 }
             }
-            return firstPipeOutput;
         }
+    }
+    if(parametersvalid == 0 ){
+        printf("invalid arguments\n");
+        return "error";
+    }
+    if (firstPipeOutput==NULL) return "Error";
+    firstPipeOutput[0] = '\0';
+    
+    
+    if ((!strcmp(parameters, "-c")) == 0){
+        if (parameters[0] == '\0' && historyContent != NULL || collumCountCheck > (*histLength)){
+            tempCounter = (*histLength);
+        }
+        else if (collumCountCheck > 0 && parameters[0] != '0' ){
+            tempCounter = collumCountCheck;
+        }
+        for (int i=(*histLength)-tempCounter;i<*histLength;i++){ //print double-linked list
+            if (pipecount ==2){
+                if (firstPipeOutput[0]=='\0'){
+                    firstPipeOutput=malloc(strlen(historyContent));
+                    if (firstPipeOutput==NULL) return "error";
+                }
+                else{
+                    firstPipeOutput = realloc(firstPipeOutput, (i-(*histLength)+tempCounter)*256*sizeof(char)) ;
+                    if(firstPipeOutput==NULL)return "fail";
+                    firstPipeOutput[(i-(*histLength)+tempCounter)*256] = historyContent[i*256];
+                }
+            }else {
+                printf("%s",&(historyContent[(i-1)*256]));
+            }
+        }
+        return firstPipeOutput;
+        
+        
+    }
     else if ((!strcmp(parameters, "-c")) != 0){
         for(int i=0 ;i<(*histLength) *257;i++){
             historyContent[i] = '\0'; //TODO why does it only delte sometimes?
         }
         *histLength=0;
-        return "exit";
+        strcpy(firstPipeOutput, historyContent);
+        return firstPipeOutput;
     }else if ((!strcmp(parameters, "-c")) == 0 && parameters[0] == '0'  && (collumCountCheck) == '0'){
         printf("invalid arguments");
     }
     
-    else if (collumCountCheck != '0' && parameters[0] != '0' )
-        
-        for (int i=0;i<collumCountCheck+1;i++){ //print double-linked list
-                if (pipecount ==2){
-                    if (firstPipeOutput[0]=='\0'){
-                        firstPipeOutput=malloc(strlen(historyContent));
-                        if (firstPipeOutput==NULL) return "error";
-                    }
-                    else{
-                        firstPipeOutput = realloc(firstPipeOutput, i*256*sizeof(char)) ;
-                        if(firstPipeOutput==NULL)return "fail";
-                        firstPipeOutput[i*256] = historyContent[i*256];
-                    }
-                }else {
-                    printf("%s",&(historyContent[i*256]));
-                }
-            }
-            return firstPipeOutput;
-
+//     else if (collumCountCheck > 0 && parameters[0] != '0' )
+//         
+//         for (int i=0;i<collumCountCheck;i++){ //print i lines of history
+//                 if (pipecount ==2){
+//                     if (firstPipeOutput[0]=='\0'){
+//                         firstPipeOutput=malloc(strlen(historyContent)*sizeof(char));
+//                         if (firstPipeOutput==NULL) return "error";
+//                     }
+//                     else{
+//                         firstPipeOutput = realloc(firstPipeOutput, (strlen(historyContent))*sizeof(char)) ;
+//                         if(firstPipeOutput==NULL)return "fail";
+//                         firstPipeOutput[i*256] = historyContent[i*256];
+//                     }
+//                 }else {
+//                     if (firstPipeOutput[0]=='\0'){
+//                         firstPipeOutput=malloc(strlen(historyContent)*sizeof(char));
+//                         if (firstPipeOutput==NULL) return "error";
+//                         firstPipeOutput[i*256] = historyContent[i*256];
+//                     }
+//                     else{
+//                         firstPipeOutput = realloc(firstPipeOutput, strlen(historyContent)*sizeof(char)) ;
+//                         if(firstPipeOutput==NULL)return "fail";
+//                         firstPipeOutput[i*256] = historyContent[i*256];
+//                     }
+//                     printf("%s\n",firstPipeOutput);
+//                 }
+//             }
+    return firstPipeOutput;
     return "exit";
 }
 
@@ -125,13 +159,12 @@ void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
  *Add input line to history
  */
 
-void  addHistoryLine(int historyCollumCount, char input[], char history[]){
+void  addHistoryLine(int historyCollumCount, char input[], char *history[]){
     char temp[strlen(input)+2];
-    //strcpy(temp, input);
-    history=realloc(history, (1+historyCollumCount) * 256 * sizeof(char)); //add new line to history
+    (*history)=realloc(*history, (1+historyCollumCount) * 256 * sizeof(char)); //add new line to history
     historyCollumCount--;
     sprintf(temp, "%i %s",historyCollumCount, input);
-    strcpy(&(history[historyCollumCount * 256]), temp);
+    strcat(*history, temp);
 }
 
 /**
@@ -214,6 +247,7 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
     char *secondPipeOutput=malloc(256*sizeof(char));
     secondPipeOutput=NULL;
     
+    
     if(parameters[0] != '\0'){    //Read out the searched pattern and file name;
         int k=0;
         enouth = 1;
@@ -226,7 +260,10 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
             filename[k+1]='\0';
             k++;
         }
-        
+        if (parameters[(strlen(pattern)+strlen(filename)+2)]!='\0'){
+            printf("invalid arguments\n");
+            return "MIST!";
+        }
         
          if(strstr(fullInput, "|") == NULL){
             grepFilePointer = fopen(filename,"r");
@@ -408,11 +445,7 @@ int main(){
 
         if (input[0]!='\n'){
             historyCollumCount++;
-            addHistoryLine(historyCollumCount, input, history);
-//                 history=realloc(history, (2+historyCollumCount) * 256 * sizeof(char)); //add new line to history
-//                 historyCollumCount++;
-//                 sprintf(input, "%i ",historyCollumCount);
-//                 strcpy(&(history[historyCollumCount * 256]), input);
+            addHistoryLine(historyCollumCount, input, &history);
             
             pipes(input, firstInput, secondInput);     //split input to prepare pipes //First the function cheks...
             if (strstr(input, "|") != NULL)/*secondInput[0] != '\0')*/{                      //if there is a pipeline (pipecount= 1 or 2)...
@@ -526,9 +559,6 @@ int main(){
                 firstPipeOutputMain=NULL;
             }
             }
-//             if (strstr(input, "|") != NULL){
-//                 printf("%s", secondPipeOutput);
-//             }
             if (exitint==0){
                 break;
             }
@@ -540,7 +570,7 @@ int main(){
     }
     free(input);
     free(fullOutput);
-return 0;
+    return 0;
 }
 
 //Bspl: fgets([var], [length], stdin);
