@@ -96,7 +96,7 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
             if (pipecount ==2){
             //    if (tempCounter>=((*histLength)-i)){
                     if (firstPipeOutput[0]=='\0'){
-                        firstPipeOutput=malloc(strlen(historyContent));
+                        firstPipeOutput=realloc(firstPipeOutput, strlen(historyContent));
                         if (firstPipeOutput==NULL) return "error";
                     }
                     else{
@@ -147,9 +147,9 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
 void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
     FILE *historyFile=0;
     if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){
-        for (int i=0; i < collumCount; i++ ){
-            fputs(&(historyCurrent[i*256]), historyFile);
-        }
+        //for (int i=0; i < collumCount; i++ ){
+            fputs((historyCurrent/*[i*256]*/), historyFile);
+        //}
         fclose(historyFile);
     }
 }
@@ -254,19 +254,19 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
             pattern[i] = parameters[i];
             pattern[i+1]='\0';
         }
-        for (int i = strlen(pattern)+1; !isspace(parameters[i+1]);i++ ){ //  ...and file name.
+        for (int i = strlen(pattern)+1; i<strlen(parameters) || (!isspace(parameters[i+1])) ;i++ ){ //  ...and file name.
             filename[k] = parameters[i];
             filename[k+1]='\0';
             k++;
         }
-        if (parameters[(strlen(pattern)+strlen(filename)+2)]!='\0'){
-            printf("invalid arguments\n");
+        if (parameters[ (strlen(pattern)+strlen(filename)+1)]!='\0' && isspace(parameters[ (strlen(pattern)+strlen(filename)+2)]==0) ){
+            printf("no such file or directory\n");
             return "MIST!";
         }
         
          if(strstr(fullInput, "|") == NULL){
-            grepFilePointer = fopen(filename,"r");
-            if(grepFilePointer != NULL){ //try to open the file to read out rhe content
+            
+            if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
                 for (int i = 0 ;(fgets(&(grepFileContent[i*256]),256 , grepFilePointer)); ){ //get content of file
                     if(strstr(grepFileContent, pattern)!= NULL) { //Put every appearence of pattern to output
                         for(int p=0; grepFileContent[i*256+p] != '\n' ;p++){
@@ -290,7 +290,7 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
         }
         else if (strstr(fullInput, "|") != NULL){
             char tempString[256];
-            if (secondPipeOutput==NULL){
+            if (secondPipeOutput==NULL && pipecount == 1){
                 if( (secondPipeOutput = realloc(secondPipeOutput, (sizeof(char)))) != NULL);
                 secondPipeOutput[0]='\0';
             }
@@ -307,7 +307,15 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
                     }
                 }
             }
+            if (pipecount==1){
             printf("%s", secondPipeOutput);
+            }
+            if (pipecount==2){
+                if ((firstPipeOutput=realloc(firstPipeOutput, strlen(secondPipeOutput)*sizeof(char))) != NULL){
+                    strcpy(firstPipeOutput, secondPipeOutput);
+                    return firstPipeOutput;
+                }
+            }
         }
         if (secondPipeOutput != NULL) {
             free(secondPipeOutput);
@@ -416,7 +424,7 @@ int main(){
     int pipecount=0;//...Piplines
     
     char *firstPipeOutputMain=malloc(sizeof(char));
-    //firstPipeOutputMain[0]='\0';
+    firstPipeOutputMain[0]='\0';
     
     char *fullOutput=malloc(256*sizeof(char));
     
@@ -566,8 +574,9 @@ int main(){
     if (history!=NULL){
         free(history);
     }
-    free(input);
-    free(fullOutput);
+    //if (firstPipeOutputMain!=NULL) free(firstPipeOutputMain);
+    if (input!=NULL) free(input);
+    if (fullOutput!=NULL) free(fullOutput);
     return 0;
 }
 
