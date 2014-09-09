@@ -53,15 +53,26 @@ char *date(int pipecount){
  */
 char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount){ 
     char *firstPipeOutput=malloc(sizeof(char));
-    int collumCountCheck= atoi(parameters);
+    int collumCountCheck=0;
+    collumCountCheck=atoi(parameters);
     int parametersvalid = 1;
     int tempCounter=0;
+
+    char suchaverytempChar[strlen(historyContent)];
     
     for (int i = 0;i<strlen(parameters);i++){ //Trimm pattern to check if allowed
-        if (!isspace(parameters[i+1])){
-            for (int k=0; k<strlen(parameters)-i+1;k++){
-                if (!isspace(parameters[i+k])&& strcmp(parameters, "-c") && collumCountCheck <= 0){
-                    parametersvalid=0;
+        if (!isspace(parameters[i+1])== 0 ){
+            
+            for(int wsTemp=0;wsTemp < strlen(parameters-i);wsTemp++ ){
+                if (isspace(parameters[i+2+wsTemp]) == 0) parametersvalid = 0; 
+                
+            }
+        }
+            
+        else if (isspace(parameters[i+1])== 0){
+            for (int k=0; k<strlen(parameters)-i;k++){
+            if (((isspace(parameters[i+1+k]) == 0 && parameters[i+1+k] != '\0' && strstr(parameters, "-c") == NULL && collumCountCheck<= 0)  || (collumCountCheck <= 0 && strstr(parameters, "-c") == NULL && parameters[i]!='\0'))){
+                parametersvalid=0;
                 }
             }
         }
@@ -74,33 +85,49 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
     firstPipeOutput[0] = '\0';
     
     
-    if ((!strcmp(parameters, "-c")) == 0){
+    if ((strcmp(parameters, "-c")) != 0){
         if ((parameters[0] == '\0' && historyContent != NULL) || collumCountCheck > (*histLength)){
-            tempCounter = 2 * (*histLength);
+            tempCounter =(*histLength);
         }
         else if (collumCountCheck > 0 && parameters[0] != '0' ){
             tempCounter = collumCountCheck;
         }
         for (int i=0;i<*histLength;i++){ //print double-linked list
             if (pipecount ==2){
-                if (firstPipeOutput[0]=='\0'){
-                    firstPipeOutput=malloc(strlen(historyContent));
-                    if (firstPipeOutput==NULL) return "error";
+            //    if (tempCounter>=((*histLength)-i)){
+                    if (firstPipeOutput[0]=='\0'){
+                        firstPipeOutput=malloc(strlen(historyContent));
+                        if (firstPipeOutput==NULL) return "error";
+                    }
+                    else{
+                        firstPipeOutput = realloc(firstPipeOutput, (*histLength)*256*sizeof(char)) ;
+                        if(firstPipeOutput==NULL)return "fail";
+                        firstPipeOutput[i*256] = historyContent[i*256];
+                    }
+                //}
+                
+            }else{
+
+                for (int q=0, k=0; q < strlen(historyContent);q++, k++){
+                    suchaverytempChar[k] = historyContent[q];
+                    if (suchaverytempChar[k]=='\n'){
+                        suchaverytempChar[k+1]='\0';
+                        if (tempCounter>=((*histLength)-i)){
+                            printf("%s",suchaverytempChar);
+                        }
+                        k=-1;
+                        i++;
+                    }
                 }
-                else{
-                    firstPipeOutput = realloc(firstPipeOutput, (*histLength)*256*sizeof(char)) ;
-                    if(firstPipeOutput==NULL)return "fail";
-                    firstPipeOutput[i*256] = historyContent[i*256];
-                }
-            }else if (tempCounter+1>=(*histLength-i)){
-                printf("%s",&(historyContent[i*256]));
+                return "exit";
+
             }
         }
         return firstPipeOutput;
         
         
     }
-    else if ((!strcmp(parameters, "-c")) != 0){
+    else if ((strcmp(parameters, "-c")) == 0){
         for(int i=0 ;i<(*histLength) *257;i++){
             historyContent[i] = '\0'; //TODO why does it only delte sometimes?
         }
@@ -110,8 +137,8 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
     }else if ((!strcmp(parameters, "-c")) == 0 && parameters[0] == '0'  && (collumCountCheck) == '0'){
         printf("invalid arguments");
     }
+    
     return firstPipeOutput;
-    return "exit";
 }
 
 /*
@@ -144,7 +171,7 @@ void  addHistoryLine(int historyCollumCount, char input[], char *history[]){
  */
 void cd(char *directory){
     if (chdir(directory)==-1){
-        printf("No such directory\n");
+        printf("no such file or directory\n");
     }
     //printf("%s",directory);
 }
@@ -257,7 +284,7 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
                 free(grepOutput);
                 grepOutput=NULL;
             }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
-                printf("no such file!\n");
+                printf("no such file or directory\n");
             }
         
         }
@@ -286,7 +313,7 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
             free(secondPipeOutput);
             secondPipeOutput=NULL;
         }
-        
+
         return "Exit Success!";
     }
     else {
@@ -297,7 +324,6 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
         }
         return "Exit but you go a problem dude!";
     }
-    
 }
 
 /*
@@ -353,7 +379,7 @@ void pipes(char fullInput[], char firstInput[256], char secondInput[256]){
     //firstInput=NULL;
     //secondInput=NULL;
     
-    for (counter=0; counter<(strlen(fullInput))+1;counter++){
+    for (counter=0; counter<(strlen(fullInput));counter++){
         firstInput[counter]=fullInput[counter]; //first command and content
         firstInput[counter+1]='\0';
         if( fullInput[counter+1]== '|'){
@@ -413,7 +439,7 @@ int main(){
 
         printf("%s $ " ,get_current_dir_name());   //Print current directory
         
-        fgets(input, 256, stdin); //Why does it always missread the first input?
+            fgets(input, 256, stdin); //Why does it always missread the first input?
 
         if (input[0]!='\n'){
             historyCollumCount++;
@@ -472,10 +498,10 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 }
-                if (content[0]!='\0'){
+                if (content[0]!='\0' && strstr(content, " ")==0 ){
                     cd(content);
                 }else{
-                    printf("there is no such path\n");
+                    printf("invalid arguments\n");
                 }
             }
             else if (!strncmp(command,"echo",4)){ //Echos the written String
