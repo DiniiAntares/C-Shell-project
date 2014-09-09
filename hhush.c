@@ -123,7 +123,13 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
 
             }
         }
-        return firstPipeOutput;
+        char *returnVar;
+        returnVar=firstPipeOutput;
+        if(firstPipeOutput!=NULL){
+            free(firstPipeOutput);
+            firstPipeOutput=NULL;
+        }
+        return returnVar;
         
         
     }
@@ -133,12 +139,25 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
         }
         *histLength=0;
         strcpy(firstPipeOutput, historyContent);
-        return firstPipeOutput;
+        
+        char *returnVar;
+        returnVar=firstPipeOutput;
+        if(firstPipeOutput!=NULL){
+            free(firstPipeOutput);
+            firstPipeOutput=NULL;
+        }
+        return returnVar;
     }else if ((!strcmp(parameters, "-c")) == 0 && parameters[0] == '0'  && (collumCountCheck) == '0'){
         printf("invalid arguments");
     }
+    char *returnVar;
+    returnVar=firstPipeOutput;
+    if(firstPipeOutput!=NULL){
+        free(firstPipeOutput);
+        firstPipeOutput=NULL;
+    }
     
-    return firstPipeOutput;
+    return returnVar;
 }
 
 /*
@@ -187,8 +206,8 @@ char *ls(char *content, int pipecount){
     if(content[0]== '\0'){
         DIR *directory;
         struct dirent *dirStruct;           //Creates a Struct
-        directory = opendir(".");  //Open current Directory
-        if (directory != NULL){
+        //Open current Directory
+        if ((directory = opendir(".")) != NULL){
             if (pipecount== 2){
                 
                 
@@ -238,13 +257,12 @@ char *ls(char *content, int pipecount){
 char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInput[]){
     char pattern[256];
     char filename[256];
+    int enouth=0;
+    FILE *grepFilePointer = 0;
     char *grepOutput = malloc(256 * sizeof(char)); //Malloc something
     char *grepFileContent = malloc(256 * sizeof(char)); //Malloc something
-    FILE *grepFilePointer = 0;
-    int enouth=0;
-    
     char *secondPipeOutput=malloc(256*sizeof(char));
-    secondPipeOutput=NULL;
+    //secondPipeOutput=NULL;
     
     
     if(parameters[0] != '\0'){    //Read out the searched pattern and file name;
@@ -254,13 +272,29 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
             pattern[i] = parameters[i];
             pattern[i+1]='\0';
         }
-        for (int i = strlen(pattern)+1; i<strlen(parameters) || (!isspace(parameters[i+1])) ;i++ ){ //  ...and file name.
+        for (int i = strlen(pattern)+1; i<strlen(parameters) || (isspace(parameters[i+1])!=0) ;i++ ){ //  ...and file name.
             filename[k] = parameters[i];
             filename[k+1]='\0';
             k++;
+            if (isspace(filename[k-1])!=0 && filename[k-1] != '\0') {
+                printf("invalid arguments\n");
+                if(grepOutput!=NULL){ 
+                    free(grepOutput);
+                    grepOutput=NULL;
+                }
+                if (grepFileContent!=NULL){
+                    free(grepFileContent);
+                    grepFileContent=NULL;
+                }
+                if(secondPipeOutput!=NULL){
+                    free(secondPipeOutput);
+                    secondPipeOutput=NULL;
+                }
+                return "BÄM!";
+            }
         }
-        if (parameters[ (strlen(pattern)+strlen(filename)+1)]!='\0' && isspace(parameters[ (strlen(pattern)+strlen(filename)+2)]==0) ){
-            printf("no such file or directory\n");
+        if ((parameters[ (strlen(pattern)+strlen(filename)+1)]!='\0' && isspace(parameters[ (strlen(pattern)+strlen(filename)+1)]==0) )){
+            printf("invalid arguments\n");
             
             if(grepOutput!=NULL){ 
                 free(grepOutput);
@@ -342,7 +376,13 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
                     free(secondPipeOutput);
                     secondPipeOutput=NULL;
                     }
-                    return firstPipeOutput;
+                    char *returnVar;
+                    returnVar=firstPipeOutput;
+                    if(firstPipeOutput!=NULL){
+                        free(firstPipeOutput);
+                        firstPipeOutput=NULL;
+                    }
+                    return returnVar;
                 }
             }
         }
@@ -532,6 +572,11 @@ int main(){
                     cd(startDir);
                     historySave(history, historyCollumCount);
                     exitint = 0;
+                    if (firstPipeOutputMain!=NULL) {
+                        free(firstPipeOutputMain);
+                        firstPipeOutputMain=NULL;
+                    }
+
                     break;
                 }
             }
@@ -545,7 +590,10 @@ int main(){
                     printf("invalid arguments\n");
                 }
                 else{
-                firstPipeOutputMain=date(pipecount);
+                    //firstPipeOutputMain=realloc() Maybe needed!
+                    if (pipecount==2){
+                        firstPipeOutputMain=date(pipecount);
+                    }else date(pipecount);
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
@@ -577,7 +625,12 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
-                firstPipeOutputMain=historyFunc(content, history, &historyCollumCount, pipecount);
+                if (pipecount==2){
+                        firstPipeOutputMain=historyFunc(content, history, &historyCollumCount, pipecount);
+                }else historyFunc(content, history, &historyCollumCount, pipecount);
+                
+                
+                
             }
             else if (!strncmp(command,"ls",2)){
                 if(i==0){
@@ -588,7 +641,10 @@ int main(){
                 if (content[0]!='\0'){
                     printf("invalid arguments\n");
                 }else{
-                    firstPipeOutputMain=ls(content, pipecount);
+                
+                    if (pipecount==2){
+                        firstPipeOutputMain=ls(content, pipecount);
+                    }else ls(content, pipecount);
                 }
             }
             else if (!strncmp(command,"grep",4)){
@@ -608,7 +664,7 @@ int main(){
             else{
                 printf("command not found\n");
             }
-            if( firstPipeOutputMain!=NULL && i==1){
+            if( firstPipeOutputMain!=NULL && pipecount == 1){
                 free(firstPipeOutputMain);
                 firstPipeOutputMain=NULL;
             }
