@@ -261,6 +261,20 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
         }
         if (parameters[ (strlen(pattern)+strlen(filename)+1)]!='\0' && isspace(parameters[ (strlen(pattern)+strlen(filename)+2)]==0) ){
             printf("no such file or directory\n");
+            
+            if(grepOutput!=NULL){ 
+                free(grepOutput);
+                grepOutput=NULL;
+            }
+            if (grepFileContent!=NULL){
+                free(grepFileContent);
+                grepFileContent=NULL;
+            }
+            if(secondPipeOutput!=NULL){
+                free(secondPipeOutput);
+                secondPipeOutput=NULL;
+            }
+            
             return "MIST!";
         }
         
@@ -281,8 +295,10 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
                 }
                 printf("%s\n",grepOutput);
                 fclose(grepFilePointer);
-                free(grepOutput);
-                grepOutput=NULL;
+                if (grepOutput!= NULL){
+                    free(grepOutput);
+                    grepOutput=NULL;
+                }
             }else if ((grepFilePointer = fopen(filename,"r")) == NULL){
                 printf("no such file or directory\n");
             }
@@ -313,20 +329,50 @@ char *grep(char *parameters, int pipecount, char firstPipeOutput[], char fullInp
             if (pipecount==2){
                 if ((firstPipeOutput=realloc(firstPipeOutput, strlen(secondPipeOutput)*sizeof(char))) != NULL){
                     strcpy(firstPipeOutput, secondPipeOutput);
+                    
+                    if(grepOutput!=NULL){ 
+                        free(grepOutput);
+                        grepOutput=NULL;
+                    }
+                    if (grepFileContent!=NULL){
+                        free(grepFileContent);
+                        grepFileContent=NULL;
+                    }
+                    if(secondPipeOutput!=NULL){
+                    free(secondPipeOutput);
+                    secondPipeOutput=NULL;
+                    }
                     return firstPipeOutput;
                 }
             }
         }
-        if (secondPipeOutput != NULL) {
+        
+        if(grepOutput!=NULL){ 
+            free(grepOutput);
+            grepOutput=NULL;
+        }
+        if (grepFileContent!=NULL){
+            free(grepFileContent);
+            grepFileContent=NULL;
+        }
+        if(secondPipeOutput!=NULL){
             free(secondPipeOutput);
             secondPipeOutput=NULL;
         }
-
         return "Exit Success!";
     }
     else {
         printf("invalid arguments\n");
-        if (secondPipeOutput!=NULL){
+
+        if(grepOutput!=NULL){ 
+            free(grepOutput);
+            grepOutput=NULL;
+        }
+        if (grepFileContent!=NULL){
+            free(grepFileContent);
+            grepFileContent=NULL;
+        }
+        if(secondPipeOutput!=NULL){
             free(secondPipeOutput);
             secondPipeOutput=NULL;
         }
@@ -406,9 +452,9 @@ void pipes(char fullInput[], char firstInput[256], char secondInput[256]){
 int main(){
     
     
-    
-    int commandSize = 0;
     char *get_current_dir_name();
+    int commandSize = 0;
+    
     char *startDir = get_current_dir_name(); // To prevent false dir for history File
     char command[256];
     char content[256];
@@ -423,8 +469,9 @@ int main(){
     char secondInput[256];//...for...
     int pipecount=0;//...Piplines
     
+    
     char *firstPipeOutputMain=malloc(sizeof(char));
-    firstPipeOutputMain[0]='\0';
+    //firstPipeOutputMain="1";
     
     char *fullOutput=malloc(256*sizeof(char));
     
@@ -444,10 +491,11 @@ int main(){
         content[0]= '\0';
         command[0]= '\0';
 
-
-        printf("%s $ " ,get_current_dir_name());   //Print current directory
+        char *directoryVar = get_current_dir_name();
+        printf("%s $ " ,directoryVar);   //Print current directory
+        free(directoryVar);
         
-            fgets(input, 256, stdin); //Why does it always missread the first input?
+        fgets(input, 256, stdin); //Why does it always missread the first input?
 
         if (input[0]!='\n'){
             historyCollumCount++;
@@ -568,13 +616,16 @@ int main(){
             if (exitint==0){
                 break;
             }
+            
         }
-        
     }
     if (history!=NULL){
         free(history);
+        history = NULL;
     }
-    //if (firstPipeOutputMain!=NULL) free(firstPipeOutputMain);
+    if (firstPipeOutputMain!=NULL) free(firstPipeOutputMain);
+    //free(firstPipeOutputMain);
+    free (startDir);
     if (input!=NULL) free(input);
     if (fullOutput!=NULL) free(fullOutput);
     return 0;
