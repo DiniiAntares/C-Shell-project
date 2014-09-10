@@ -36,10 +36,11 @@
 /*
  * Prints the current date+time.
  */
-char *date(int pipecount){
+char *date(int pipecount, int *returnValueFreeable){
     time_t currentTime = time(NULL);    //create a var out of time_t
     if(pipecount==2){
         char *firstPipeOutput = asctime(localtime(&currentTime));
+        *returnValueFreeable=0;
         return firstPipeOutput;
     }
     else{
@@ -206,7 +207,7 @@ void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
 
 void  addHistoryLine(int historyCollumCount, char input[], char *history[]){
     char temp[strlen(input)+2];
-    (*history)=realloc(*history, (1+historyCollumCount) * 256 * sizeof(char)); //add new line to history
+    *history=realloc(*history, (1+historyCollumCount) * 256 * sizeof(char)); //add new line to history
     historyCollumCount--;
     sprintf(temp, "%i %s",historyCollumCount, input);
     strcat(*history, temp);
@@ -225,7 +226,7 @@ void cd(char *directory){
 /**
  * Prints the current directions content.
  */
-char *ls(char *content, int pipecount){
+char *ls(char *content, int pipecount, int *returnValueFreeable){
     char *firstPipeOutput=malloc(sizeof(char));
     char verytemp[256];
     firstPipeOutput[0]='\0';
@@ -276,12 +277,14 @@ char *ls(char *content, int pipecount){
                 if(firstPipeOutput!=NULL){
                     free(firstPipeOutput);
                     firstPipeOutput=NULL;
+                    returnValueFreeable=0;
                 }
                 if(directory!=NULL){
                     closedir(directory); //Close Directory{
                     
                     directory=NULL;
                 }
+                *returnValueFreeable=0;
                 return returnVar;
             }else{
                 while((dirStruct = readdir(directory)) != NULL){ //loop the output
@@ -330,7 +333,7 @@ char *ls(char *content, int pipecount){
 /*
  * Read out content from file and search a pattern
  */
-char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char fullInput[]){
+char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char fullInput[], int *returnValueFreeable){
     char pattern[256];
     char overTemp[256];
     overTemp[0]='\0';
@@ -355,7 +358,7 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
     
     
         
-        if((strstr(fullInput, "|")) == NULL){ //TODO Prüfe ob grepFileContent überhaupt & und [i*256] braucht!
+        if((strstr(fullInput, "|")) == NULL){ 
 
             if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
         
@@ -557,7 +560,7 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
                     secondPipeOutput[0]='\0';
                 }
             }
-            if (firstPipeOutput[0]!='\0') {
+            if (*returnValueFreeable==1 && firstPipeOutput[0]!='\0') {
                 char *grepPipeTemp=malloc((4097)*sizeof(char));
                 grepPipeTemp[0]='\0';
             
@@ -599,13 +602,8 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
                     free(secondPipeOutput);
                     secondPipeOutput=NULL;
                     }
-                    char *returnVar;
-                    returnVar=firstPipeOutput;
-                    if(firstPipeOutput!=NULL){
-                        free(firstPipeOutput);
-                        firstPipeOutput=NULL;
-                    }
-                    return returnVar;
+                    *returnValueFreeable=0;
+                    return firstPipeOutput;
                 }
             }
         }
@@ -712,6 +710,7 @@ int main(){
     history=malloc(256*sizeof(char));
     int wsCounter=0;
     static int exitint=1;
+    int returnValueFreeable=1;
     
     char firstInput[256]; //Used...
     char secondInput[256];//...for...
@@ -782,11 +781,11 @@ int main(){
                     cd(startDir);
                     historySave(history, historyCollumCount);
                     exitint = 0;
-                    if (firstPipeOutputMain!=NULL) {
+                    if (firstPipeOutputMain!=NULL && returnValueFreeable==1) {
                         free(firstPipeOutputMain);
                         firstPipeOutputMain=NULL;
+                        returnValueFreeable=0;
                     }
-
                     break;
                 }
             }
@@ -801,9 +800,9 @@ int main(){
                 }
                 else{
                     //firstPipeOutputMain=realloc() Maybe needed!
-                    if (pipecount==2){
-                        firstPipeOutputMain=date(pipecount);
-                    }else date(pipecount);
+                    if (i==1){
+                        firstPipeOutputMain=date(pipecount, &returnValueFreeable);
+                    }else date(pipecount, &returnValueFreeable);
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
@@ -836,7 +835,7 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
-                if (pipecount==2){
+                if (i==0){
                         firstPipeOutputMain=historyFunc(content, history, &historyCollumCount, pipecount);
                 }else historyFunc(content, history, &historyCollumCount, pipecount);
                 
@@ -854,8 +853,8 @@ int main(){
                 }else{
                 
                     if (pipecount==2){
-                        firstPipeOutputMain=ls(content, pipecount);
-                    }else ls(content, pipecount);
+                        firstPipeOutputMain=ls(content, pipecount, &returnValueFreeable);
+                    }else ls(content, pipecount, &returnValueFreeable);
                 }
             }
             else if (!strncmp(command,"grep",4)){
@@ -866,9 +865,9 @@ int main(){
                 } 
                 if(content[0]!='\0'){
                     if (i==0){
-                        grep(content, pipecount, firstPipeOutputMain, input);
+                        grep(content, pipecount, firstPipeOutputMain, input, &returnValueFreeable);
                     }else if (i==1){
-                        firstPipeOutputMain=grep(content, pipecount, firstPipeOutputMain, input);
+                        firstPipeOutputMain=grep(content, pipecount, firstPipeOutputMain, input, &returnValueFreeable);
                     }
                 }
             }
@@ -876,7 +875,7 @@ int main(){
                 printf("command not found\n");
             }
         
-        if(firstPipeOutputMain != NULL && pipecount == 1){
+        if(returnValueFreeable==1){
             free(firstPipeOutputMain);
             firstPipeOutputMain=NULL;
             
@@ -890,16 +889,14 @@ int main(){
             
         }
     }
-    if (history!=NULL){
-        free(history);
-        history = NULL;
-    }
-    if (firstPipeOutputMain!=NULL) free(firstPipeOutputMain);
+    
+        
+    
+    if (returnValueFreeable==1) free(firstPipeOutputMain);
     //free(firstPipeOutputMain);
-    free (startDir);
-    if (input!=NULL) free(input);
-    if (fullOutput!=NULL) free(fullOutput);
+    free(history);
+    free(startDir);
+    free(input);
+    free(fullOutput);
     return 0;
 }
-
-//Bspl: fgets([var], [length], stdin);
