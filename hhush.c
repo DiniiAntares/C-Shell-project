@@ -339,10 +339,10 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
     char filename[256];
     filename[0]='\0';
     
-    int k=0;
-    int i = 0;
-    int c=0;
-    int t=0;
+    unsigned int k=0;
+    unsigned int i=0;
+    unsigned int c=0;
+    unsigned int t=0;
     
     //int enouth=0;
     FILE *grepFilePointer = 0;
@@ -355,7 +355,7 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
         
         //enouth = 1;
         
-        for (i=0; !isspace(overTemp[i]) ;i++){ //Read out the searched pattern...
+        for (i=0; !isspace(overTemp[i]) && overTemp[i]!= '\0' ;i++){ //Read out the searched pattern...
             pattern[i] = overTemp[i];
             pattern[i+1]='\0';
         }
@@ -376,7 +376,7 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
                 filename[k]=filename[i];
                 k++;
 
-                if (!isspace(filename[i+1])){
+                if ( filename[i]!='\0' && isspace(filename[i+1])){
 
                     for (int j=i; (j< strlen(filename)+1 ) ;j++){
                         if(filename[j]=='\0') filename[k]='\0';
@@ -402,7 +402,22 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
                 }
             }else if (filename[i+1] == '\0') filename[k+1]= '\0';
         }
-
+        if (filename[0]=='\0'){
+            if(grepOutput!=NULL){
+            free(grepOutput);
+            grepOutput=NULL;
+            }
+            if (grepFileContent!=NULL){
+                free(grepFileContent);
+                grepFileContent=NULL;
+            }
+            if(secondPipeOutput!=NULL){
+                free(secondPipeOutput);
+                secondPipeOutput=NULL;
+            }
+            printf("invalid arguments\n");
+            return "Mist";
+        }
         
         if((strstr(fullInput, "|")) == NULL){ //TODO Prüfe ob grepFileContent überhaupt & und [i*256] braucht!
 //             printf("%s\n", filename);
@@ -411,9 +426,9 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
                 
                 //Read out content of file
                 char *fileContentTemp=malloc(4097*sizeof(char));
-                
+                fileContentTemp[0]='\0';
                 char *line = malloc(4097*sizeof(char));
-                
+                line[0]='\0';
                 while (fgets(line, 4096,grepFilePointer)){
                     
                     if(strstr(line,pattern)){
@@ -426,14 +441,16 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
 //                 printf("%s", fileContentTemp);
                 
                 grepOutput=realloc(grepOutput, (strlen(fileContentTemp))+1 * sizeof(char));
+                
                 if(fileContentTemp[0]!='\0'){
                         strcpy(grepOutput, fileContentTemp);
                         grepOutput[strlen(grepOutput)-1]='\0';
                         printf("%s\n",grepOutput);
                 }
-                
-                free (fileContentTemp);
-                
+                if (fileContentTemp!=NULL){
+                    free (fileContentTemp);
+                    fileContentTemp=NULL;
+                }
                 
 
                 fclose(grepFilePointer);
