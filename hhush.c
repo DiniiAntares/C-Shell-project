@@ -246,14 +246,14 @@ char *ls(char *content, int pipecount, char *firstPipeOutput){
                     directory=NULL;
                 }
             }
-            return "EXIT";
+            return "success";
         }else{
             printf("invalid arguments\n");
             return "error!";
         }
-        return "exit";
+        return "Success";
     }
-    return "EXIT";
+    return "error";
 }
 
 /*
@@ -276,181 +276,56 @@ char *grep(char parameters[256], int pipecount, char *firstPipeOutput, char full
     grepFileContent[0]='\0';
     char *secondPipeOutput=malloc(256*sizeof(char));
     secondPipeOutput[0]='\0';
-    
-    
-        
-        //Check for pipe
-        if((strstr(fullInput, "|")) == NULL){  //No Pipe
 
-            if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
-        
-        //enouth = 1;
-        
-                for (i=0; !isspace(overTemp[i]) && overTemp[i]!= '\0' ;i++){ //Read out the searched pattern...
-                    pattern[i] = overTemp[i];
-                    pattern[i+1]='\0';
-                }
-                for (i = ((strlen(pattern))+1); (i<(strlen(overTemp)+1)) ;i++ ){ //  ...and file name.
-                    filename[k] = overTemp[i]; 
-                    filename[k+1]='\0';
+    //Check for pipe
+    if((strstr(fullInput, "|")) == NULL){  //No Pipe
+        if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
+            for (i=0; !isspace(overTemp[i]) && overTemp[i]!= '\0' ;i++){ //Read out the searched pattern...
+                pattern[i] = overTemp[i];
+                pattern[i+1]='\0';
+            }
+            for (i = ((strlen(pattern))+1); (i<(strlen(overTemp)+1)) ;i++ ){ //  ...and file name.
+                filename[k] = overTemp[i]; 
+                filename[k+1]='\0';
+                k++;
+            }
+            for ( i=0, k=0; i<strlen(pattern);i++){
+                if((isspace(pattern[i]))==0){
+                    pattern[k]=pattern[i];
                     k++;
                 }
-                for ( i=0, k=0; i<strlen(pattern);i++){
-                    if((isspace(pattern[i]))==0){
-                        pattern[k]=pattern[i];
-                        k++;
-                    }
-                }
-                
-                for (i=0, k=0; i<strlen(filename)+1;i++){
-                    if((isspace(filename[i]))==0 ){
-                        filename[k]=filename[i];
-                        k++;
-            
-                        if ( filename[i]!='\0' && isspace(filename[i+1])){
-        
-                            for (int j=i; (j< strlen(filename)+1 ) ;j++){
-                                if(filename[j]=='\0') filename[k]='\0';
-                                if( !(isspace(filename[j+1])) && filename[j+1]!='\0' ){
-                                    printf("invalid arguments\n");
-                                    
-                                    if(grepOutput!=NULL){ 
-                                        free(grepOutput);
-                                        grepOutput=NULL;
-                                    }
-                                    if (grepFileContent!=NULL){
-                                        free(grepFileContent);
-                                        grepFileContent=NULL;
-                                    }
-                                    if(secondPipeOutput!=NULL){
-                                        free(secondPipeOutput);
-                                        secondPipeOutput=NULL;
-                                    }
-                                    
-                                    return "mist";
-                                }
-                            }
-                        }
-                    }else if (filename[i+1] == '\0') filename[k+1]= '\0';
-                }
-                if (filename[0]=='\0'){
-                    if(grepOutput!=NULL){
-                        free(grepOutput);
-                        grepOutput=NULL;
-                    }
-                    if (grepFileContent!=NULL){
-                        free(grepFileContent);
-                        grepFileContent=NULL;
-                    }
-                    if(secondPipeOutput!=NULL){
-                        free(secondPipeOutput);
-                        secondPipeOutput=NULL;
-                    }
-                    printf("invalid arguments\n");
-                    return "Mist";
-                }
-                    
-                    
-            
-            //             printf("%s\n", filename);
-            
-                if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
-                
-                //Read out content of file
-                    char *fileContentTemp=malloc(4097*sizeof(char));
-                    fileContentTemp[0]='\0';
-                    char *line = malloc(4097*sizeof(char));
-                    line[0]='\0';
-                    while (fgets(line, 4096,grepFilePointer)){
-                        
-                        if(strstr(line,pattern)){
-                        fileContentTemp=realloc(fileContentTemp, (strlen(fileContentTemp) + strlen(line) +1 )*sizeof(char));
-                        strcat(fileContentTemp, line);
-                        }
-                    
-                    }
-                    free(line);
-//                 printf("%s", fileContentTemp);
-                
-                    grepOutput=realloc(grepOutput, (strlen(fileContentTemp))+1 * sizeof(char));
-                
-                    if(fileContentTemp[0]!='\0'){
-                        strcpy(grepOutput, fileContentTemp);
-                        grepOutput[strlen(grepOutput)-1]='\0';
-                        printf("%s\n",grepOutput);
-                    }
-                    if (fileContentTemp!=NULL){
-                        free (fileContentTemp);
-                        fileContentTemp=NULL;
-                    }
-                    
-    
-                    fclose(grepFilePointer);
-                    if (grepOutput!= NULL){
-                        free(grepOutput);
-                        grepOutput=NULL;
-                    }
-                    
-                }else{
-                    printf("no such file or directory\n");
-                }
-                
             }
             
-        }
-        
-        else if (strstr(fullInput, "|") != NULL){ //With Pipe
-            
-            if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
-            
-                for (i=0; !isspace(overTemp[i]) && overTemp[i]!= '\0' ;i++){ //Read out the searched pattern...
-                    pattern[i] = overTemp[i];
-                    pattern[i+1]='\0';
-                }
-                for (i = ((strlen(pattern))+1); (i<(strlen(overTemp)+1)) ;i++ ){ //  ...and file name.
-                    filename[k] = overTemp[i]; 
-                    filename[k+1]='\0';
+            for (i=0, k=0; i<strlen(filename)+1;i++){
+                if((isspace(filename[i]))==0 ){
+                    filename[k]=filename[i];
                     k++;
-                }
-                for ( i=0, k=0; i<strlen(pattern);i++){ //kick out the WhiteSpaces
-                    if((isspace(pattern[i]))==0){
-                        pattern[k]=pattern[i];
-                        k++;
-                    }
-                }
-                
-                for (i=0, k=0; i<strlen(filename)+1;i++){
-                    if((isspace(filename[i]))==0 ){
-                        filename[k]=filename[i];
-                        k++;
-    
-                        if ( filename[i]!='\0' && isspace(filename[i+1])){ //Check if input is valid and set \0 if usable
-        
-                            for (int j=i; (j< strlen(filename)+1 ) ;j++){ 
-                                if(filename[j]=='\0') filename[k]='\0';
-                                if( !(isspace(filename[j+1])) && filename[j+1]!='\0' ){
-                                    printf("invalid arguments\n");
-                                    
-                                    if(grepOutput!=NULL){ 
+                    if ( filename[i]!='\0' && isspace(filename[i+1])){
+                        for (int j=i; (j< strlen(filename)+1 ) ;j++){
+                            if(filename[j]=='\0') filename[k]='\0';
+                            if( !(isspace(filename[j+1])) && filename[j+1]!='\0' ){
+                                printf("invalid arguments\n");
+                                
+                                if(grepOutput!=NULL){ 
                                     free(grepOutput);
                                     grepOutput=NULL;
-                                    }
-                                    if (grepFileContent!=NULL){
-                                        free(grepFileContent);
-                                        grepFileContent=NULL;
-                                    }
-                                    if(secondPipeOutput!=NULL){
-                                        free(secondPipeOutput);
-                                        secondPipeOutput=NULL;
-                                    }
-                                    return "mist";
                                 }
+                                if (grepFileContent!=NULL){
+                                    free(grepFileContent);
+                                    grepFileContent=NULL;
+                                }
+                                if(secondPipeOutput!=NULL){
+                                    free(secondPipeOutput);
+                                    secondPipeOutput=NULL;
+                                }
+                                
+                                return "mist";
                             }
                         }
-                    }else if (filename[i+1] == '\0') filename[k+1]= '\0';
-                }
+                    }
+                }else if (filename[i+1] == '\0') filename[k+1]= '\0';
             }
-            if (filename[0]!='\0'){
+            if (filename[0]=='\0'){
                 if(grepOutput!=NULL){
                     free(grepOutput);
                     grepOutput=NULL;
@@ -466,74 +341,171 @@ char *grep(char parameters[256], int pipecount, char *firstPipeOutput, char full
                 printf("invalid arguments\n");
                 return "Mist";
             }
-            
-            if (secondPipeOutput==NULL && pipecount == 1){
-                if( (secondPipeOutput = realloc(secondPipeOutput, (sizeof(char)))) != NULL){
-                    secondPipeOutput[0]='\0';
-                }
-            }
-            if (firstPipeOutput[0]!='\0') {
-                char *grepPipeTemp=malloc((4097)*sizeof(char));
-                grepPipeTemp[0]='\0';
-            
-                char tempString[4097];
-                tempString[0]='\0';
-            
-                for( i=0, k=0 ;firstPipeOutput[i]!= '\0'  ;i++){       //check if pattern is in current line and make it usable.
-                    grepPipeTemp[k]=firstPipeOutput[i];
-                    k++;
-                    if (firstPipeOutput[i]=='\n' || firstPipeOutput[i+1]=='\0'){
-                        if ((strstr(grepPipeTemp , pattern))!=0){
-                        strcat(tempString, grepPipeTemp);
-                        }
-                        k=0;
+        //             printf("%s\n", filename);
+            if((grepFilePointer = fopen(filename,"r")) != NULL){ //try to open the file to read out rhe content
+                
+                //Read out content of file
+                char *fileContentTemp=malloc(4097*sizeof(char));
+                fileContentTemp[0]='\0';
+                char *line = malloc(4097*sizeof(char));
+                line[0]='\0';
+                while (fgets(line, 4096,grepFilePointer)){
+                    if(strstr(line,pattern)){
+                    fileContentTemp=realloc(fileContentTemp, (strlen(fileContentTemp) + strlen(line) +1 )*sizeof(char));
+                    strcat(fileContentTemp, line);
                     }
                 }
-                if (pipecount==1) printf("%s", tempString);
-                else if(pipecount==2)strcpy(secondPipeOutput, tempString);
-                if(grepPipeTemp!=NULL){
-                    free(grepPipeTemp);
-                    grepPipeTemp=NULL;
+                free(line);
+//              printf("%s", fileContentTemp);
+                grepOutput=realloc(grepOutput, (strlen(fileContentTemp))+1 * sizeof(char));
+                
+                if(fileContentTemp[0]!='\0'){
+                    strcpy(grepOutput, fileContentTemp);
+                    grepOutput[strlen(grepOutput)-1]='\0';
+                    printf("%s\n",grepOutput);
                 }
-            }
-            
-            
-            
-            if (pipecount==2){
-                if ((firstPipeOutput=realloc(firstPipeOutput, (strlen(secondPipeOutput)+1)*sizeof(char))) != NULL){  //in this case, secondPipeOutput is a var to fill firstPipeOutput
-                    strcpy(firstPipeOutput, secondPipeOutput);
-                    
-                    if(grepOutput!=NULL){ 
-                        free(grepOutput);
-                        grepOutput=NULL;
-                    }
-                    if (grepFileContent!=NULL){
-                        free(grepFileContent);
-                        grepFileContent=NULL;
-                    }
-                    if(secondPipeOutput!=NULL){
-                    free(secondPipeOutput);
-                    secondPipeOutput=NULL;
-                    }
-                    return "It Works!"/*firstPipeOutput*/;
+                if (fileContentTemp!=NULL){
+                    free (fileContentTemp);
+                    fileContentTemp=NULL;
                 }
+                fclose(grepFilePointer);
+                if (grepOutput!= NULL){
+                    free(grepOutput);
+                    grepOutput=NULL;
+                }
+            }else{
+                printf("no such file or directory\n");
             }
         }
         
-        if(grepOutput!=NULL){ 
-            free(grepOutput);
-            grepOutput=NULL;
+        
+        
+    }else if (strstr(fullInput, "|") != NULL){ //With Pipe
+        if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
+            for (i=0; !isspace(overTemp[i]) && overTemp[i]!= '\0' ;i++){ //Read out the searched pattern...
+                pattern[i] = overTemp[i];
+                pattern[i+1]='\0';
+            }
+            for (i = ((strlen(pattern))+1); (i<(strlen(overTemp)+1)) ;i++ ){ //  ...and file name.
+                filename[k] = overTemp[i]; 
+                filename[k+1]='\0';
+                k++;
+            }
+            for ( i=0, k=0; i<strlen(pattern);i++){ //kick out the WhiteSpaces
+                if((isspace(pattern[i]))==0){
+                    pattern[k]=pattern[i];
+                    k++;
+                }
+            }
+            for (i=0, k=0; i<strlen(filename)+1;i++){
+                if((isspace(filename[i]))==0 ){
+                    filename[k]=filename[i];
+                    k++;
+                    if ( filename[i]!='\0' && isspace(filename[i+1])){ //Check if input is valid and set \0 if usable
+                        for (int j=i; (j< strlen(filename)+1 ) ;j++){ 
+                            if(filename[j]=='\0') filename[k]='\0';
+                            if( !(isspace(filename[j+1])) && filename[j+1]!='\0' ){
+                                printf("invalid arguments\n");
+                                    
+                                if(grepOutput!=NULL){ 
+                                    free(grepOutput);
+                                    grepOutput=NULL;
+                                }
+                                if (grepFileContent!=NULL){
+                                    free(grepFileContent);
+                                    grepFileContent=NULL;
+                                }
+                                if(secondPipeOutput!=NULL){
+                                    free(secondPipeOutput);
+                                    secondPipeOutput=NULL;
+                                }
+                                return "mist";
+                            }
+                        }
+                    }
+                }else if (filename[i+1] == '\0') filename[k+1]= '\0';
+            }
         }
-        if (grepFileContent!=NULL){
-            free(grepFileContent);
-            grepFileContent=NULL;
+        if (filename[0]!='\0'){
+            if(grepOutput!=NULL){
+                free(grepOutput);
+                grepOutput=NULL;
+            }
+            if (grepFileContent!=NULL){
+                free(grepFileContent);
+                grepFileContent=NULL;
+            }
+            if(secondPipeOutput!=NULL){
+                free(secondPipeOutput);
+                secondPipeOutput=NULL;
+            }
+            printf("invalid arguments\n");
+            return "Mist";
         }
-        if(secondPipeOutput!=NULL){
-            free(secondPipeOutput);
-            secondPipeOutput=NULL;
+        if (secondPipeOutput==NULL && pipecount == 1){
+            if( (secondPipeOutput = malloc((sizeof(char)))) != NULL){
+                secondPipeOutput[0]='\0';
+            }
         }
+        if (firstPipeOutput[0]!='\0') {
+            char *grepPipeTemp=malloc((4097)*sizeof(char));
+            grepPipeTemp[0]='\0';
+         
+            char tempString[4097];
+            tempString[0]='\0';
+            
+            for( i=0, k=0 ;firstPipeOutput[i]!= '\0'  ;i++){       //check if pattern is in current line and make it usable.
+                grepPipeTemp[k]=firstPipeOutput[i];
+                k++;
+                if (firstPipeOutput[i]=='\n' || firstPipeOutput[i+1]=='\0'){
+                    if ((strstr(grepPipeTemp , pattern))!=0){
+                    strcat(tempString, grepPipeTemp);
+                    }
+                    k=0;
+                }
+            }
+            if (pipecount==1) printf("%s", tempString);
+            else if(pipecount==2)strcpy(secondPipeOutput, tempString);
+            if(grepPipeTemp!=NULL){
+                free(grepPipeTemp);
+                grepPipeTemp=NULL;
+            }
+        }
+        if (pipecount==2){
+            if ((firstPipeOutput=realloc(firstPipeOutput, (strlen(secondPipeOutput)+1)*sizeof(char))) != NULL){  //in this case, secondPipeOutput is a var to fill firstPipeOutput
+                strcpy(firstPipeOutput, secondPipeOutput);
+                
+                if(grepOutput!=NULL){ 
+                    free(grepOutput);
+                    grepOutput=NULL;
+                }
+                if (grepFileContent!=NULL){
+                    free(grepFileContent);
+                    grepFileContent=NULL;
+                }
+                if(secondPipeOutput!=NULL){
+                    free(secondPipeOutput);
+                    secondPipeOutput=NULL;
+                }
+                return "It Works!"/*firstPipeOutput*/;
+            }
+        }
+    }
+        
+    if(grepOutput!=NULL){ 
+        free(grepOutput);
+        grepOutput=NULL;
+    }
+    if (grepFileContent!=NULL){
+        free(grepFileContent);
+        grepFileContent=NULL;
+    }
+    if(secondPipeOutput!=NULL){
+        free(secondPipeOutput);
+        secondPipeOutput=NULL;
+    }
 
-        return "Exit Success!";
+    return "Exit Success!";
 }
 
 /*
