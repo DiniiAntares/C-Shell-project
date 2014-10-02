@@ -36,11 +36,10 @@
 /*
  * Prints the current date+time.
  */
-char *date(int pipecount, int *returnValueFreeable){
+char *date(int pipecount){
     time_t currentTime = time(NULL);    //create a var out of time_t
     if(pipecount==2){
         char *firstPipeOutput = asctime(localtime(&currentTime));
-        *returnValueFreeable=0;
         return firstPipeOutput;
     }
     else{
@@ -52,8 +51,7 @@ char *date(int pipecount, int *returnValueFreeable){
 /**
  * Interacts with the history
  */
-char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount){ 
-    char *firstPipeOutput=malloc(sizeof(char));
+char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount, char *firstPipeOutput){ 
     int collumCountCheck=0;
     collumCountCheck=atoi(parameters);
     int parametersvalid = 1;
@@ -80,18 +78,9 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
     }
     if(parametersvalid == 0 ){
         printf("invalid arguments\n");
-        
-        if(firstPipeOutput!=NULL){
-            free(firstPipeOutput);
-            firstPipeOutput=NULL;
-        }
         return "error";
     }
     if (firstPipeOutput==NULL){
-        if(firstPipeOutput!=NULL){
-            free(firstPipeOutput);
-            firstPipeOutput=NULL;
-        }
         return "Error";
     }
     firstPipeOutput[0] = '\0';
@@ -110,20 +99,12 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
                     if (firstPipeOutput[0]=='\0'){
                         firstPipeOutput=realloc(firstPipeOutput, strlen(historyContent));
                         if (firstPipeOutput==NULL) {
-                            if(firstPipeOutput!=NULL){
-                                free(firstPipeOutput);
-                                firstPipeOutput=NULL;
-                            }
                             return "error";
                         }
                     }
                     else{
                         firstPipeOutput = realloc(firstPipeOutput, (*histLength)*256*sizeof(char)) ;
                         if(firstPipeOutput==NULL){
-                            if(firstPipeOutput!=NULL){
-                                free(firstPipeOutput);
-                                firstPipeOutput=NULL;
-                            }
                             return "fail";
                         }
                         firstPipeOutput[i*256] = historyContent[i*256];
@@ -143,47 +124,32 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
                         i++;
                     }
                 }
-                if(firstPipeOutput!=NULL){
-                    free(firstPipeOutput);
-                    firstPipeOutput=NULL;
-                }
+
                 return "exit";
 
             }
         }
         char *returnVar;
         returnVar=firstPipeOutput;
-        if(firstPipeOutput!=NULL){
-            free(firstPipeOutput);
-            firstPipeOutput=NULL;
-        }
         return returnVar;
         
         
     }
     else if ((strcmp(parameters, "-c")) == 0){
         for(int i=0 ;i<(*histLength) *257;i++){
-            historyContent[i] = '\0'; //TODO why does it only delte sometimes?
+            historyContent[i] = '\0';
         }
         *histLength=0;
         strcpy(firstPipeOutput, historyContent);
         
         char *returnVar;
         returnVar=firstPipeOutput;
-        if(firstPipeOutput!=NULL){
-            free(firstPipeOutput);
-            firstPipeOutput=NULL;
-        }
         return returnVar;
     }else if ((!strcmp(parameters, "-c")) == 0 && parameters[0] == '0'  && (collumCountCheck) == '0'){
         printf("invalid arguments");
     }
     char *returnVar;
     returnVar=firstPipeOutput;
-    if(firstPipeOutput!=NULL){
-        free(firstPipeOutput);
-        firstPipeOutput=NULL;
-    }
     
     return returnVar;
 }
@@ -226,114 +192,74 @@ void cd(char *directory){
 /**
  * Prints the current directions content.
  */
-char *ls(char *content, int pipecount, int *returnValueFreeable){
-    char *firstPipeOutput=malloc(sizeof(char));
+char *ls(char *content, int pipecount, char *firstPipeOutput){
     char verytemp[256];
     firstPipeOutput[0]='\0';
     if(content[0]== '\0'){
-        DIR *directory;
+        DIR *directory = NULL;
         struct dirent *dirStruct;           //Creates a Struct
         //Open current Directory
         if ((directory = opendir(".")) != NULL){
             if (pipecount== 2){
                 
-                
-            while((dirStruct = readdir(directory)) != NULL){ //loop the output
-                if(firstPipeOutput==NULL){
-                        firstPipeOutput=malloc(strlen(dirStruct->d_name)+1);
-                        if(firstPipeOutput==NULL) break;
-                        
-                        if (verytemp[0]!='.'){
-                            strcpy(firstPipeOutput,dirStruct->d_name);
-                            strcat(firstPipeOutput,"\n");
-                        }
-                }else{
-                        firstPipeOutput=realloc(firstPipeOutput,strlen(firstPipeOutput)+1+1+strlen(dirStruct->d_name)+1); //länge der strings + ein trennzeichen z.b. '\n' oder ' '
-                        if (firstPipeOutput==NULL){
-                            if(firstPipeOutput!=NULL){
-                                free(firstPipeOutput);
-                                firstPipeOutput=NULL;
+                while((dirStruct = readdir(directory)) != NULL){ //loop the output
+                    if(firstPipeOutput==NULL){
+                            firstPipeOutput=malloc(strlen(dirStruct->d_name)+1); //Check if something is malloced (unlikely)
+                            if(firstPipeOutput==NULL) break;
+                            if (verytemp[0]!='.'){  //Much more 
+                                strcpy(firstPipeOutput,dirStruct->d_name);
+                                strcat(firstPipeOutput,"\n");
                             }
-                            if(directory!=NULL){
-                                closedir(directory); //Close Directory{
-                                
-                                directory=NULL;
+                    }else{
+                            firstPipeOutput=realloc(firstPipeOutput,strlen(firstPipeOutput)+1+1+strlen(dirStruct->d_name)+1); //länge der strings + ein trennzeichen z.b. '\n' oder ' '
+                            if (firstPipeOutput==NULL){ //Check if realloc is valid
+                                if(directory!=NULL){
+                                    closedir(directory); //Close Directory{
+                                    directory=NULL;
+                                }
+                                return "Error";
                             }
-                            return "error";
-                            
-                        }
-                        strcpy(verytemp, dirStruct->d_name);
-                        if (verytemp[0]!='.'){
-                            strcat(firstPipeOutput,dirStruct->d_name);
-                            strcat(firstPipeOutput,"\n");
-                        }
+                    }
+                    strcpy(verytemp, dirStruct->d_name);
+                    if (verytemp[0]!='.'){
+                        strcat(firstPipeOutput,dirStruct->d_name);
+                        strcat(firstPipeOutput,"\n");
+                    }
                 }
-            }
             
-            
-            
-            char *returnVar;
-                returnVar=firstPipeOutput;
-                if(firstPipeOutput!=NULL){
-                    free(firstPipeOutput);
-                    firstPipeOutput=NULL;
-                    *returnValueFreeable=0;
-                }
                 if(directory!=NULL){
                     closedir(directory); //Close Directory{
-                    
                     directory=NULL;
                 }
-                *returnValueFreeable=0;
-                return returnVar;
+                return "SUCCESS!";
+    
             }else{
                 while((dirStruct = readdir(directory)) != NULL){ //loop the output
                     strcpy(verytemp, dirStruct->d_name);
                     if (verytemp[0]!='.'){
                         printf("%s\n", dirStruct->d_name); //Read out Directory trough the Struct
                     }
-
-                }
-                if(firstPipeOutput!=NULL){
-                    free(firstPipeOutput);
-                    firstPipeOutput=NULL;
                 }
                 if(directory!=NULL){
                     closedir(directory); //Close Directory{
-                    
-                    directory=NULL;
-                }
-                    directory=NULL;
-                }
-                return "EXIT";
-            }
-        
-            if(directory!=NULL){
-                closedir(directory); //Close Directory{
                 
-                directory=NULL;
+                    directory=NULL;
+                }
             }
-    }
-    else {
-        printf("invalid arguments\n");
-        if(firstPipeOutput!=NULL){
-            free(firstPipeOutput);
-            firstPipeOutput=NULL;
+            return "EXIT";
+        }else{
+            printf("invalid arguments\n");
+            return "error!";
         }
-
-        return "error!";
+        return "exit";
     }
-    if(firstPipeOutput!=NULL){
-        free(firstPipeOutput);
-        firstPipeOutput=NULL;
-    }
-    return "exit";
+    return "EXIT";
 }
 
 /*
  * Read out content from file and search a pattern
  */
-char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char fullInput[], int *returnValueFreeable){
+char *grep(char parameters[256], int pipecount, char *firstPipeOutput, char fullInput[]){
     char pattern[256];
     char overTemp[256];
     overTemp[0]='\0';
@@ -341,13 +267,8 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
     pattern[0]='\0';
     char filename[256];
     filename[0]='\0';
-    
     unsigned int k=0;
     unsigned int i=0;
-//     unsigned int c=0;
-//     unsigned int t=0;
-    
-    //int enouth=0;
     FILE *grepFilePointer = 0;
     char *grepOutput = malloc(256 * sizeof(char)); //Malloc something
     grepOutput[0]='\0';
@@ -358,7 +279,8 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
     
     
         
-        if((strstr(fullInput, "|")) == NULL){ 
+        //Check for pipe
+        if((strstr(fullInput, "|")) == NULL){  //No Pipe
 
             if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
         
@@ -477,62 +399,57 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
             
         }
         
-        
-        else if (strstr(fullInput, "|") != NULL){
-                    
-            if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
-        
+        else if (strstr(fullInput, "|") != NULL){ //With Pipe
             
-        
-            for (i=0; !isspace(overTemp[i]) && overTemp[i]!= '\0' ;i++){ //Read out the searched pattern...
-                pattern[i] = overTemp[i];
-                pattern[i+1]='\0';
-            }
-            for (i = ((strlen(pattern))+1); (i<(strlen(overTemp)+1)) ;i++ ){ //  ...and file name.
-                filename[k] = overTemp[i]; 
-                filename[k+1]='\0';
-                k++;
-            }
-            for ( i=0, k=0; i<strlen(pattern);i++){
-                if((isspace(pattern[i]))==0){
-                    pattern[k]=pattern[i];
+            if(overTemp[0] != '\0'){    //Read out the searched pattern and file name;
+            
+                for (i=0; !isspace(overTemp[i]) && overTemp[i]!= '\0' ;i++){ //Read out the searched pattern...
+                    pattern[i] = overTemp[i];
+                    pattern[i+1]='\0';
+                }
+                for (i = ((strlen(pattern))+1); (i<(strlen(overTemp)+1)) ;i++ ){ //  ...and file name.
+                    filename[k] = overTemp[i]; 
+                    filename[k+1]='\0';
                     k++;
                 }
-            }
-            
-            for (i=0, k=0; i<strlen(filename)+1;i++){
-                if((isspace(filename[i]))==0 ){
-                    filename[k]=filename[i];
-                    k++;
-
-                    if ( filename[i]!='\0' && isspace(filename[i+1])){
+                for ( i=0, k=0; i<strlen(pattern);i++){ //kick out the WhiteSpaces
+                    if((isspace(pattern[i]))==0){
+                        pattern[k]=pattern[i];
+                        k++;
+                    }
+                }
+                
+                for (i=0, k=0; i<strlen(filename)+1;i++){
+                    if((isspace(filename[i]))==0 ){
+                        filename[k]=filename[i];
+                        k++;
     
-                        for (int j=i; (j< strlen(filename)+1 ) ;j++){
-                            if(filename[j]=='\0') filename[k]='\0';
-                            if( !(isspace(filename[j+1])) && filename[j+1]!='\0' ){
-                                printf("invalid arguments\n");
-                                
-                                if(grepOutput!=NULL){ 
-                                free(grepOutput);
-                                grepOutput=NULL;
+                        if ( filename[i]!='\0' && isspace(filename[i+1])){ //Check if input is valid and set \0 if usable
+        
+                            for (int j=i; (j< strlen(filename)+1 ) ;j++){ 
+                                if(filename[j]=='\0') filename[k]='\0';
+                                if( !(isspace(filename[j+1])) && filename[j+1]!='\0' ){
+                                    printf("invalid arguments\n");
+                                    
+                                    if(grepOutput!=NULL){ 
+                                    free(grepOutput);
+                                    grepOutput=NULL;
+                                    }
+                                    if (grepFileContent!=NULL){
+                                        free(grepFileContent);
+                                        grepFileContent=NULL;
+                                    }
+                                    if(secondPipeOutput!=NULL){
+                                        free(secondPipeOutput);
+                                        secondPipeOutput=NULL;
+                                    }
+                                    return "mist";
                                 }
-                                if (grepFileContent!=NULL){
-                                    free(grepFileContent);
-                                    grepFileContent=NULL;
-                                }
-                                if(secondPipeOutput!=NULL){
-                                    free(secondPipeOutput);
-                                    secondPipeOutput=NULL;
-                                }
-                                
-                                return "mist";
                             }
                         }
-                    }
-                }else if (filename[i+1] == '\0') filename[k+1]= '\0';
+                    }else if (filename[i+1] == '\0') filename[k+1]= '\0';
+                }
             }
-        }
-        
             if (filename[0]!='\0'){
                 if(grepOutput!=NULL){
                     free(grepOutput);
@@ -549,32 +466,31 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
                 printf("invalid arguments\n");
                 return "Mist";
             }
-        
-        
             
             if (secondPipeOutput==NULL && pipecount == 1){
                 if( (secondPipeOutput = realloc(secondPipeOutput, (sizeof(char)))) != NULL){
                     secondPipeOutput[0]='\0';
                 }
             }
-            if (*returnValueFreeable==1 && firstPipeOutput[0]!='\0') {
+            if (firstPipeOutput[0]!='\0') {
                 char *grepPipeTemp=malloc((4097)*sizeof(char));
                 grepPipeTemp[0]='\0';
             
                 char tempString[4097];
                 tempString[0]='\0';
             
-                for( i=0, k=0 ;firstPipeOutput[i]!= '\0'  ;i++){
+                for( i=0, k=0 ;firstPipeOutput[i]!= '\0'  ;i++){       //check if pattern is in current line and make it usable.
                     grepPipeTemp[k]=firstPipeOutput[i];
                     k++;
-                    if(firstPipeOutput[i]=='\n')k=0;
-                    if ((strstr(grepPipeTemp , pattern))!=0){
+                    if (firstPipeOutput[i]=='\n' || firstPipeOutput[i+1]=='\0'){
+                        if ((strstr(grepPipeTemp , pattern))!=0){
                         strcat(tempString, grepPipeTemp);
-                        strcat(tempString, "\n");
+                        }
                         k=0;
                     }
                 }
                 if (pipecount==1) printf("%s", tempString);
+                else if(pipecount==2)strcpy(secondPipeOutput, tempString);
                 if(grepPipeTemp!=NULL){
                     free(grepPipeTemp);
                     grepPipeTemp=NULL;
@@ -584,7 +500,7 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
             
             
             if (pipecount==2){
-                if ((firstPipeOutput=realloc(firstPipeOutput, (strlen(secondPipeOutput)+1)*sizeof(char))) != NULL){
+                if ((firstPipeOutput=realloc(firstPipeOutput, (strlen(secondPipeOutput)+1)*sizeof(char))) != NULL){  //in this case, secondPipeOutput is a var to fill firstPipeOutput
                     strcpy(firstPipeOutput, secondPipeOutput);
                     
                     if(grepOutput!=NULL){ 
@@ -599,8 +515,7 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
                     free(secondPipeOutput);
                     secondPipeOutput=NULL;
                     }
-                    *returnValueFreeable=0;
-                    return firstPipeOutput;
+                    return "It Works!"/*firstPipeOutput*/;
                 }
             }
         }
@@ -617,6 +532,7 @@ char *grep(char parameters[256], int pipecount, char firstPipeOutput[], char ful
             free(secondPipeOutput);
             secondPipeOutput=NULL;
         }
+
         return "Exit Success!";
 }
 
@@ -707,7 +623,6 @@ int main(){
     history=malloc(256*sizeof(char));
     int wsCounter=0;
     static int exitint=1;
-    int returnValueFreeable=1;
     
     char firstInput[256]; //Used...
     char secondInput[256];//...for...
@@ -736,8 +651,7 @@ int main(){
         firstInput[0] = '\0';
         secondInput[0]= '\0';
         content[0]= '\0';
-        command[0]= '\0';
-
+        command[0]= '\0';        
         char *directoryVar = get_current_dir_name();
         printf("%s $ " ,directoryVar);   //Print current directory
         free(directoryVar);
@@ -778,11 +692,6 @@ int main(){
                     cd(startDir);
                     historySave(history, historyCollumCount);
                     exitint = 0;
-                    if (firstPipeOutputMain!=NULL && returnValueFreeable==1) {
-                        free(firstPipeOutputMain);
-                        firstPipeOutputMain=NULL;
-                        returnValueFreeable=0;
-                    }
                     break;
                 }
             }
@@ -798,8 +707,8 @@ int main(){
                 else{
                     //firstPipeOutputMain=realloc() Maybe needed!
                     if (i==1){
-                        firstPipeOutputMain=date(pipecount, &returnValueFreeable);
-                    }else date(pipecount, &returnValueFreeable);
+                        /*firstPipeOutputMain=*/date(pipecount);
+                    }else date(pipecount);
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
@@ -833,8 +742,8 @@ int main(){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
                 if (i==0){
-                        firstPipeOutputMain=historyFunc(content, history, &historyCollumCount, pipecount);
-                }else historyFunc(content, history, &historyCollumCount, pipecount);
+                        /*firstPipeOutputMain=*/historyFunc(content, history, &historyCollumCount, pipecount, firstPipeOutputMain);
+                }else historyFunc(content, history, &historyCollumCount, pipecount, firstPipeOutputMain);
                 
                 
                 
@@ -850,8 +759,8 @@ int main(){
                 }else{
                 
                     if (pipecount==2){
-                        firstPipeOutputMain=ls(content, pipecount, &returnValueFreeable);
-                    }else ls(content, pipecount, &returnValueFreeable);
+                        ls(content, pipecount, firstPipeOutputMain);
+                    }else ls(content, pipecount,firstPipeOutputMain);
                 }
             }
             else if (!strncmp(command,"grep",4)){
@@ -862,22 +771,15 @@ int main(){
                 } 
                 if(content[0]!='\0'){
                     if (i==0){
-                        grep(content, pipecount, firstPipeOutputMain, input, &returnValueFreeable);
+                        grep(content, pipecount, firstPipeOutputMain, input);
                     }else if (i==1){
-                        firstPipeOutputMain=grep(content, pipecount, firstPipeOutputMain, input, &returnValueFreeable);
+                        grep(content, pipecount, firstPipeOutputMain, input);
                     }
                 }
             }
             else{
                 printf("command not found\n");
             }
-        
-        if(returnValueFreeable==1){
-            free(firstPipeOutputMain);
-            firstPipeOutputMain=NULL;
-            
-        }
-
         }
 
         if (exitint==0){
@@ -889,7 +791,8 @@ int main(){
     
         
     
-    if (returnValueFreeable==1) free(firstPipeOutputMain);
+    free(firstPipeOutputMain);
+    firstPipeOutputMain=NULL;
     free(history);
     free(startDir);
     free(input);
