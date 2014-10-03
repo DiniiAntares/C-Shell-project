@@ -396,8 +396,8 @@ char *grep(char parameters[256], int pipecount, char *firstPipeOutput, char full
                     pattern[k]=pattern[i];
                     k++;
                 }
-            }
-            for (i=0, k=0; i<strlen(filename)+1;i++){
+            } 
+            for (i=0, k=0; i<strlen(filename)+1;i++){ //Purrrrr-fect pattern and filename!
                 if((isspace(filename[i]))==0 ){
                     filename[k]=filename[i];
                     k++;
@@ -441,12 +441,12 @@ char *grep(char parameters[256], int pipecount, char *firstPipeOutput, char full
             }
             printf("invalid arguments\n");
             return "Mist";
-        }
+        }/*
         if (secondPipeOutput==NULL && pipecount == 1){
             if( (secondPipeOutput = malloc((sizeof(char)))) != NULL){
                 secondPipeOutput[0]='\0';
             }
-        }
+        }*/
         if (firstPipeOutput[0]!='\0') {
             char *grepPipeTemp=malloc((4097)*sizeof(char));
             grepPipeTemp[0]='\0';
