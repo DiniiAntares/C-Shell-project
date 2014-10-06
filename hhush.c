@@ -36,11 +36,13 @@
 /*
  * Prints the current date+time.
  */
-char *date(int pipecount){
+char *date(int pipecount, char **firstPipeOutput){
     time_t currentTime = time(NULL);    //create a var out of time_t
     if(pipecount==2){
-        char *firstPipeOutput = asctime(localtime(&currentTime));
-        return firstPipeOutput;
+        char *timeTemp = asctime(localtime(&currentTime));
+        *firstPipeOutput=realloc(*firstPipeOutput, (strlen(timeTemp)+1)*sizeof(char));
+        strcpy(*firstPipeOutput, timeTemp);
+        return "Success!";
     }
     else{
         printf("%s", asctime(localtime(&currentTime))); //Arange and print Time
@@ -311,14 +313,14 @@ char *grep(char parameters[256], int pipecount, char **firstPipeOutput, char ful
     if (filename[0]=='\0'){
         if( (strstr(fullInput, "|")) && (pipecount == 1) ){ //Take this case if firstPipeOutput is filled.
             
-            char temporaryVarToUseFirstOutput[strlen(*firstPipeOutput) + 1 ];
+            char temporaryVarToUseFirstOutput[strlen(*firstPipeOutput) + 4 ];
             temporaryVarToUseFirstOutput[0]='\0';
-            for (i=0, j=1; i < strlen(*firstPipeOutput);i++){//strcpy with cut token...
+            for (i=0, j=0; i < strlen(*firstPipeOutput)+1;i++){//strcpy with cut token...
                 
                 temporaryVarToUseFirstOutput[j]=(*firstPipeOutput)[i];
                 
                 if((temporaryVarToUseFirstOutput[j] =='\n') ||(temporaryVarToUseFirstOutput[j] == '\0' )){
-                    
+                    temporaryVarToUseFirstOutput[j+1]='\0';
                     if ( strstr(temporaryVarToUseFirstOutput,pattern) ){ //...and here the actual grep.
                         printf("%s",temporaryVarToUseFirstOutput);
                     }
@@ -350,7 +352,7 @@ char *grep(char parameters[256], int pipecount, char **firstPipeOutput, char ful
             
             if ( strstr(fullInput, "|" ) ){  //Print or copy the greped Stuff to see content or to prepare pipe.
                 
-                *firstPipeOutput=realloc(*firstPipeOutput, strlen(fileContentTemp)*sizeof(char));
+                *firstPipeOutput=realloc(*firstPipeOutput, strlen(fileContentTemp)*sizeof(char)+2);
                 strcpy(*firstPipeOutput, fileContentTemp);
                 if (fileContentTemp!= NULL){
                     free(fileContentTemp);
@@ -434,11 +436,13 @@ void contentReader(char fullInput[], int sizeOfCommand, char content[256]){
         int j=0;
         for (;j<strlen(fullInput) && (isspace(fullInput[sizeOfCommand+j])!=0);j++);
         for(; (isspace(fullInput[sizeOfCommand+j])) != 0 ; j++);
-            for (int i = sizeOfCommand+j; i < strlen(fullInput)-1 && fullInput[i+1] != '|' ; i++){
+        for (int i = sizeOfCommand+j; i < strlen(fullInput)-1 && fullInput[i+1] != '|' ; i++){
             content[k] = fullInput[i];
             content[k+1] = '\0';
             k++;
-            }
+        }
+        
+            
     }else{
         content[0] = '\0';
     }
@@ -570,8 +574,8 @@ int main(){
                 else{
                     //firstPipeOutput=realloc() Maybe needed!
                     if (i==1){
-                        /*firstPipeOutput=*/date(pipecount);
-                    }else date(pipecount);
+                        /*firstPipeOutput=*/date(pipecount, &firstPipeOutput);
+                    }else date(pipecount, &firstPipeOutput);
                 }
             }
             else if (!strncmp(command,"cd",2)){ 
@@ -592,11 +596,36 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 }
+                
+                int l=0;
+                int m=0;
 
+                //TODO Wörkwörk
+                
+                
+                for (l=0;l < strlen(content)+1;l++){ //Delete all useless WhiteSpaces
+                    if (isspace(content[l])) content[l]=' ';
+                    content[m] = content[l];
+                    if ( isspace(content[l]) && !isspace(content[l+1]) ){
+                        m++;
+                        continue;
+                    }
+                    
+                    if (isspace(content[l]) && isspace(content[l+1]) ){
+                       continue;
+                    }
+                    m++;
+                    
+                }
+
+                
+                
                 if (content[0]!='\0'){
                     if (strstr(input, "|")){
-                        firstPipeOutput=realloc(firstPipeOutput, strlen(content)*sizeof(char) + 1);
+                        firstPipeOutput=realloc(firstPipeOutput, strlen(content)*sizeof(char) + 5);
                         strcpy(firstPipeOutput, content);
+                        strcat(firstPipeOutput, "\n");
+                        
                     } 
                     else printf("%s\n", content);
                 }else(printf("\n"));
@@ -645,6 +674,7 @@ int main(){
             }
             else{
                 printf("command not found\n");
+                break;
             }
         }
 
