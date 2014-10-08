@@ -55,7 +55,7 @@ char *date(int pipecount, char **firstPipeOutput){
  */
 char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount, char **firstPipeOutput){ 
     int collumCountCheck=0;
-    collumCountCheck=atoi(parameters);
+    collumCountCheck=atoi(parameters); //String to Integer
     int parametersvalid = 1;
     int tempCounter=0;
 
@@ -63,13 +63,10 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
     
     for (int i = 0;i<strlen(parameters);i++){ //Trimm pattern to check if allowed
         if (!isspace(parameters[i+1])== 0 ){
-            
-            for(int wsTemp=0;wsTemp < strlen(parameters-i);wsTemp++ ){
-                if (isspace(parameters[i+2+wsTemp]) == 0) parametersvalid = 0; 
-                
+            for(int wsTemp=0;wsTemp < strlen(parameters)-i-1;wsTemp++ ){
+                if (!isspace(parameters[i+2+wsTemp])) parametersvalid = 0; 
             }
-        }
-            
+        } 
         else if (isspace(parameters[i+1])== 0){
             for (int k=0; k<strlen(parameters)-i;k++){
             if (((isspace(parameters[i+1+k]) == 0 && parameters[i+1+k] != '\0' && strstr(parameters, "-c") == NULL && collumCountCheck<= 0)  || (collumCountCheck <= 0 && strstr(parameters, "-c") == NULL && parameters[i]!='\0'))){
@@ -82,12 +79,6 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
         printf("invalid arguments\n");
         return "error";
     }
-    if (*firstPipeOutput==NULL){
-        return "Error";
-    }
-    *firstPipeOutput[0] = '\0';
-    
-    
     if ((strcmp(parameters, "-c")) != 0){
         if ((parameters[0] == '\0' && historyContent != NULL) || collumCountCheck > (*histLength)){
             tempCounter =(*histLength);
@@ -97,21 +88,21 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
         }
         for (int i=0;i<*histLength;i++){ //print double-linked list
             if (pipecount ==2){
-            //    if (tempCounter>=((*histLength)-i)){
-                    if (*firstPipeOutput[0]=='\0'){
-                        *firstPipeOutput=realloc(*firstPipeOutput, strlen(historyContent));
-                        if (*firstPipeOutput==NULL) {
-                            return "error";
-                        }
-                    }
-                    else{
-                        *firstPipeOutput = realloc(*firstPipeOutput, (*histLength)*256*sizeof(char)) ;
-                        if(*firstPipeOutput==NULL){
-                            return "fail";
-                        }
-                        *firstPipeOutput[i*256] = historyContent[i*256];
-                    }
-                //}
+                
+                *firstPipeOutput=realloc(*firstPipeOutput, (1+strlen(historyContent))*sizeof(char));
+                strcpy(*firstPipeOutput, historyContent);
+                break;
+//                 for (int q=0, k=0; q < strlen(historyContent);q++, k++){
+//                     suchaverytempChar[k] = historyContent[q];
+//                     if (suchaverytempChar[k]=='\n'){
+//                         suchaverytempChar[k+1]='\0';
+//                         if (tempCounter>=((*histLength)-i)){
+//                             printf("%s",suchaverytempChar);
+//                         }
+//                         k=-1;
+//                         i++;
+//                     }
+//                 }
                 
             }else{
 
@@ -131,9 +122,7 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
 
             }
         }
-        char *returnVar;
-        returnVar=*firstPipeOutput;
-        return returnVar;
+        return "SUCCESS";
         
         
     }
@@ -143,27 +132,29 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
         }
         *histLength=0;
         strcpy(*firstPipeOutput, historyContent);
-        
-        char *returnVar;
-        returnVar=*firstPipeOutput;
-        return returnVar;
+        return "SUCCESS";
     }else if ((!strcmp(parameters, "-c")) == 0 && parameters[0] == '0'  && (collumCountCheck) == '0'){
         printf("invalid arguments");
     }
-    char *returnVar;
-    returnVar=*firstPipeOutput;
-    
-    return returnVar;
+    return "SUCCESS";
 }
 
 /*
  * Saves the last 1000 entrys of history in .hhush.histfile 
  */
-void historySave(char *historyCurrent, int collumCount){ //BAUSTELLE!!!
+void historySave(char *historyCurrent, int collumCount){ //TODO Fehler finden, wird nicht richtig gespeichert.
     FILE *historyFile=0;
-    if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){
+    if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){ 
         //for (int i=0; i < collumCount; i++ ){
-            fputs((historyCurrent/*[i*256]*/), historyFile);
+        
+//         int n=0;
+//         //PROBLEM: ES WIRD NUR DIE ERSTE (ODER LETZE??) HISTORY ZEILE EINGELESEN.
+//         while ((fputc(historyCurrent[n], historyFile)) != EOF){
+//             n++
+//         }
+            fputs(historyCurrent, historyFile);
+               
+//         while(fputs(historyCurrent, historyFile) !=EOF);
         //}
         fclose(historyFile);
     }
@@ -478,7 +469,6 @@ int main(){
     
     char *get_current_dir_name();
     int commandSize = 0;
-    
     char *startDir = get_current_dir_name(); // To prevent false dir for history File
     char command[256];
     command[0]='\0';
@@ -487,24 +477,17 @@ int main(){
     FILE *historyFile = NULL;
     char *history = NULL;
     int historyCollumCount = 0;
-    history=malloc(256*sizeof(char));
+    history=malloc(257*sizeof(char));
     int wsCounter=0;
     static int exitint=1;
-    
     char firstInput[256]; //Used...
     char secondInput[256];//...for...
     int pipecount=0;//...Piplines
-    
-    
     char *firstPipeOutput=malloc(2*sizeof(char));
-    //firstPipeOutput='\0';
-    
     char *fullOutput=malloc(256*sizeof(char));
     fullOutput[0]='\0' ;
-    
     char *input=malloc(258*sizeof(char));
     input[0]='\0' ;
-    
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
         for(historyCollumCount=0; fgets(&(history[historyCollumCount * 256]), 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
             historyCollumCount++;
@@ -514,7 +497,6 @@ int main(){
     }
     input[0] = '\0';
     while(1){
-        
         firstInput[0] = '\0';
         secondInput[0]= '\0';
         content[0]= '\0';
@@ -523,7 +505,22 @@ int main(){
         printf("%s $ " ,directoryVar);   //Print current directory
         free(directoryVar);
         fgets(input, 256, stdin);
-
+        int l=0;
+        int m=0;
+        for (l=0;l < strlen(input)+1;l++){ //Delete all useless WhiteSpaces
+            if ( isspace(input[l]) && input[l]!= '\n'){
+                input[l]=' ';
+            }
+            input[m] = input[l];
+            if ( isspace(input[l]) && !isspace(input[l+1]) ){
+                m++;
+                continue;
+            }
+            if (isspace(input[l]) && isspace(input[l+1]) ){
+                continue;
+            }
+            m++;
+        }
         if (input[0]!='\n'){
             historyCollumCount++;
             addHistoryLine(historyCollumCount, input, &history);
@@ -543,9 +540,7 @@ int main(){
                     commandReader(secondInput, command, &wsCounter); //read out the command.
                     commandSize = strlen(command) + wsCounter;
                 }
-            
-//Chek if input is a legit command
-
+//Chek if input contains a legit and usable command
             if (!strncmp(command,"exit", 4)){ 
                 if(i==0){
                     contentReader(firstInput , commandSize, content); //read out the rest
@@ -596,29 +591,6 @@ int main(){
                 }else if(i==1){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 }
-                
-                int l=0;
-                int m=0;
-
-                //TODO Wörkwörk
-                
-                
-                for (l=0;l < strlen(content)+1;l++){ //Delete all useless WhiteSpaces
-                    if (isspace(content[l])) content[l]=' ';
-                    content[m] = content[l];
-                    if ( isspace(content[l]) && !isspace(content[l+1]) ){
-                        m++;
-                        continue;
-                    }
-                    
-                    if (isspace(content[l]) && isspace(content[l+1]) ){
-                       continue;
-                    }
-                    m++;
-                    
-                }
-
-                
                 
                 if (content[0]!='\0'){
                     if (strstr(input, "|")){
