@@ -90,30 +90,32 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
             if (pipecount ==2){
                 
                 
-                char *token;
-                char *tempHistoryContent=malloc(300*sizeof(char));/*)[strlen(historyContent)*historyCollumCount+2];*/
+                char *token=malloc(300*sizeof(char));
+                char tempToken[300];
+                tempToken[0]='\0';
+                char *tempHistoryContent=malloc(400*sizeof(char));/*)[strlen(historyContent)*historyCollumCount+2];*/
                 tempHistoryContent[0]='\0';
                 int temporaryCollumCountForPipe=0;
-                    
-                while (1){
+                
+                token=strtok(historyContent, "\n");
+                while (token != NULL){
 //                     if (historyContent[w]=='\n'){
                         //sprintf(historyContent,"%s%i ", historyContent, temporaryCollumCountForPipe);
-                        token=strtok(historyContent, "\n");
                         
-                        sprintf(token,"%i %s\n",temporaryCollumCountForPipe, token);
-                        tempHistoryContent=realloc(tempHistoryContent, strlen(tempHistoryContent)+strlen(token)*sizeof(char)+20);
-                        strcat(tempHistoryContent, token);
+                        strcpy(tempToken, token);
+                        token[0]='\0';
+                        
+                        sprintf(tempToken,"%i %s\n",temporaryCollumCountForPipe, token);
+                        tempHistoryContent=realloc(tempHistoryContent, (strlen(tempToken)+(2+temporaryCollumCountForPipe)*300)*sizeof(char)+20);
+                        strcat(tempHistoryContent, tempToken);
                         temporaryCollumCountForPipe++;
-                        if (token==NULL) {
-                            
-                            break;
-                        }
+                        token=strtok(NULL, "\n");
 //                     }
                     
                 }
                 *firstPipeOutput=realloc(*firstPipeOutput, (10+strlen(tempHistoryContent))*sizeof(char));
                 strcpy(*firstPipeOutput, tempHistoryContent);
-                
+                free(token);
                 free(tempHistoryContent);
                 break;
             }else{
