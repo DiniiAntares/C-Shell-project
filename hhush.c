@@ -145,17 +145,7 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
 void historySave(char *historyCurrent, int collumCount){ //TODO Fehler finden, wird nicht richtig gespeichert.
     FILE *historyFile=0;
     if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){ 
-        //for (int i=0; i < collumCount; i++ ){
-        
-//         int n=0;
-//         //PROBLEM: ES WIRD NUR DIE ERSTE (ODER LETZE??) HISTORY ZEILE EINGELESEN.
-//         while ((fputc(historyCurrent[n], historyFile)) != EOF){
-//             n++
-//         }
-            fputs(historyCurrent, historyFile);
-               
-//         while(fputs(historyCurrent, historyFile) !=EOF);
-        //}
+        fputs(historyCurrent, historyFile);
         fclose(historyFile);
     }
 }
@@ -164,9 +154,11 @@ void historySave(char *historyCurrent, int collumCount){ //TODO Fehler finden, w
  *Add input line to history
  */
 
-void  addHistoryLine(int historyCollumCount, char input[], char *history[]){
+void  addHistoryLine(int historyCollumCount, char input[], char **history){
     char temp[strlen(input)+2];
-    *history=realloc(*history, (1+historyCollumCount) * 256 * sizeof(char)); //add new line to history
+    temp[0]='\0';
+    *history=realloc(*history, (2+historyCollumCount) * 256 * sizeof(char)); //add new line to history
+    *history[0]='0';
     historyCollumCount--;
     sprintf(temp, "%i %s",historyCollumCount, input);
     strcat(*history, temp);
@@ -475,9 +467,9 @@ int main(){
     char content[256];
     content[0]='\0';
     FILE *historyFile = NULL;
-    char *history = NULL;
     int historyCollumCount = 0;
-    history=malloc(257*sizeof(char));
+    char *history=malloc(257*sizeof(char));
+    history[0]='\0';
     int wsCounter=0;
     static int exitint=1;
     char firstInput[256]; //Used...
@@ -488,19 +480,25 @@ int main(){
     fullOutput[0]='\0' ;
     char *input=malloc(258*sizeof(char));
     input[0]='\0' ;
+    
+    
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
-        for(historyCollumCount=0; fgets(&(history[historyCollumCount * 256]), 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
-            historyCollumCount++;
-            history=realloc(history,(1+historyCollumCount) * 256 * sizeof(char)); //malloc enouth to put the fileContent in the historyList
+        int characterRunVar=0;
+        while ((history[characterRunVar]=fgetc(historyFile)) != EOF){//for(historyCollumCount=0; fgets(history, 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
+            if (history[characterRunVar] == '\n') historyCollumCount++;
+            characterRunVar++;
+            history=realloc(history,(2+characterRunVar)*sizeof(char)); //malloc enouth to put the fileContent in the historyList
         }
     fclose(historyFile);
     }
+    
+    
     input[0] = '\0';
     while(1){
         firstInput[0] = '\0';
         secondInput[0]= '\0';
         content[0]= '\0';
-        command[0]= '\0';        
+        command[0]= '\0';
         char *directoryVar = get_current_dir_name();
         printf("%s $ " ,directoryVar);   //Print current directory
         free(directoryVar);
