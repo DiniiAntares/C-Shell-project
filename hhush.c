@@ -90,13 +90,15 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
             if (pipecount ==2){
                 
                 
-                char *token=malloc(300*sizeof(char));
+                char *token/*=malloc(300*sizeof(char))*/;
+                
                 char tempToken[300];
                 tempToken[0]='\0';
                 char *tempHistoryContent=malloc(400*sizeof(char));/*)[strlen(historyContent)*historyCollumCount+2];*/
                 tempHistoryContent[0]='\0';
                 int temporaryCollumCountForPipe=0;
                 token=strtok(historyContent, "\n");
+                
                 while (token != NULL){
 
                     sprintf(tempToken,"%i %s\n",temporaryCollumCountForPipe, token);
@@ -108,7 +110,6 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
                 }
                 *firstPipeOutput=realloc(*firstPipeOutput, (10+strlen(tempHistoryContent))*sizeof(char));
                 strcpy(*firstPipeOutput, tempHistoryContent);
-                free(token);
                 free(tempHistoryContent);
                 break;
             }else{
@@ -492,7 +493,7 @@ int main(){
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
         int characterRunVar=0;
         memset(history, '\0', 277*sizeof(char));
-        history[0]='0';
+//         history[0]='0';
         while ((history[characterRunVar]=fgetc(historyFile)) != EOF){//for(historyCollumCount=0; fgets(history, 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
             if (history[characterRunVar] == '\n') {
                 historyCollumCount++;
