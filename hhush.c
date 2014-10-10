@@ -158,7 +158,6 @@ void  addHistoryLine(int historyCollumCount, char input[], char **history){
     char temp[strlen(input)+2];
     temp[0]='\0';
     *history=realloc(*history, (2+historyCollumCount) * 256 * sizeof(char)); //add new line to history
-    *history[0]='0';
     historyCollumCount--;
     sprintf(temp, "%i %s",historyCollumCount, input);
     strcat(*history, temp);
@@ -487,8 +486,10 @@ int main(){
         while ((history[characterRunVar]=fgetc(historyFile)) != EOF){//for(historyCollumCount=0; fgets(history, 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
             if (history[characterRunVar] == '\n') historyCollumCount++;
             characterRunVar++;
-            history=realloc(history,(2+characterRunVar)*sizeof(char)); //malloc enouth to put the fileContent in the historyList
+            history=realloc(history,(3+characterRunVar)*sizeof(char)); //malloc enouth to put the fileContent in the historyList
+//             history[characterRunVar+1] = '\0';
         }
+        history[characterRunVar] = '\0';
     fclose(historyFile);
     }
     
