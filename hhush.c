@@ -53,7 +53,7 @@ char *date(int pipecount, char **firstPipeOutput){
 /**
  * Interacts with the history
  */
-char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount, char **firstPipeOutput){ 
+char *historyFunc(char *parameters, char *historyContent, int *histLength, int pipecount, char **firstPipeOutput, int historyCollumCount){ 
     int collumCountCheck=0;
     collumCountCheck=atoi(parameters); //String to Integer
     int parametersvalid = 1;
@@ -88,8 +88,16 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
         }
         for (int i=0;i<*histLength;i++){ //print double-linked list
             if (pipecount ==2){
+                int w=0;
+                //char tempVarToAddCounter[8+strlen(historyContent)];
+                for(w=0; w < strlen(historyContent)+1  ;w++){
+                    if (historyContent[w]=='\n'){
+                        sprintf(historyContent,"%i ", historyCollumCount);
+//                         strcat(historyContent, historyCollumCount);
+                    }
+                }
                 
-                *firstPipeOutput=realloc(*firstPipeOutput, (1+strlen(historyContent))*sizeof(char));
+                *firstPipeOutput=realloc(*firstPipeOutput, (5+strlen(historyContent))*sizeof(char));
                 strcpy(*firstPipeOutput, historyContent);
                 break;
 //                 for (int q=0, k=0; q < strlen(historyContent);q++, k++){
@@ -105,16 +113,17 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
 //                 }
                 
             }else{
-
+                int temporaryCollumCount=0;
                 for (int q=0, k=0; q < strlen(historyContent);q++, k++){
                     suchaverytempChar[k] = historyContent[q];
                     if (suchaverytempChar[k]=='\n'){
                         suchaverytempChar[k+1]='\0';
                         if (tempCounter>=((*histLength)-i)){
-                            printf("%s",suchaverytempChar);
+                            printf("%i %s", temporaryCollumCount,suchaverytempChar);
                         }
                         k=-1;
                         i++;
+                        temporaryCollumCount++;
                     }
                 }
 
@@ -140,9 +149,9 @@ char *historyFunc(char *parameters, char *historyContent, int *histLength, int p
 }
 
 /*
- * Saves the last 1000 entrys of history in .hhush.histfile 
+ * Saves the last 1000 entrys of history in .hhush.histfile
  */
-void historySave(char *historyCurrent, int collumCount){ //TODO Fehler finden, wird nicht richtig gespeichert.
+void historySave(char *historyCurrent, int collumCount){ 
     FILE *historyFile=0;
     if ((historyFile = fopen(".hhush.histfile","w+")) != NULL){ 
         fputs(historyCurrent, historyFile);
@@ -159,7 +168,7 @@ void  addHistoryLine(int historyCollumCount, char input[], char **history){
     temp[0]='\0';
     *history=realloc(*history, (2+historyCollumCount) * 256 * sizeof(char)); //add new line to history
     historyCollumCount--;
-    sprintf(temp, "%i %s",historyCollumCount, input);
+    sprintf(temp, "%s",/*historyCollumCount,*/ input);
     strcat(*history, temp);
 }
 
@@ -483,11 +492,18 @@ int main(){
     
     if ((historyFile = fopen(".hhush.histfile","r")) != NULL){
         int characterRunVar=0;
+        history[0]='0';
         while ((history[characterRunVar]=fgetc(historyFile)) != EOF){//for(historyCollumCount=0; fgets(history, 256, historyFile) ; ){//Read out .hhush.histfile and put it in the history
-            if (history[characterRunVar] == '\n') historyCollumCount++;
+            if (history[characterRunVar] == '\n') {
+                historyCollumCount++;
+                char tempCollumCount[8];
+                tempCollumCount[0]='\0';
+                sprintf(tempCollumCount, "%i ",historyCollumCount);
+                strcat(history, tempCollumCount);
+                //history[characterRunVar]=historyCollumCount;
+            }
             characterRunVar++;
-            history=realloc(history,(3+characterRunVar)*sizeof(char)); //malloc enouth to put the fileContent in the historyList
-//             history[characterRunVar+1] = '\0';
+            history=realloc(history,(20+characterRunVar)*sizeof(char)); //malloc enouth to put the fileContent in the historyList
         }
         history[characterRunVar] = '\0';
     fclose(historyFile);
@@ -608,8 +624,8 @@ int main(){
                     contentReader(secondInput , commandSize, content); //read out the rest
                 } 
                 if (i==0){
-                        /*firstPipeOutput=*/historyFunc(content, history, &historyCollumCount, pipecount, &firstPipeOutput);
-                }else historyFunc(content, history, &historyCollumCount, pipecount, &firstPipeOutput);
+                        /*firstPipeOutput=*/historyFunc(content, history, &historyCollumCount, pipecount, &firstPipeOutput, historyCollumCount);
+                }else historyFunc(content, history, &historyCollumCount, pipecount, &firstPipeOutput, historyCollumCount);
                 
                 
                 
